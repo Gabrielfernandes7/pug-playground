@@ -40,20 +40,23 @@
         { type: 'umd', url: 'https://bundle.run/pug@3.0.2' },
       ];
       const errors = [];
+      // Sem timeout, um CDN pendurado bloqueia a cadeia inteira de fallbacks.
+      const TIMEOUT_MS = 6000;
+      const withTimeout = (p) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('demorou demais')), TIMEOUT_MS))]);
       for (const src of sources) {
         try {
           if (src.type === 'esm') {
-            const mod = await import(src.url);
+            const mod = await withTimeout(import(src.url));
             const p = mod.default || mod;
             if (p && typeof p.render === 'function') { window.pug = p; return { ok: true, source: src.url, errors }; }
             errors.push({ url: src.url, reason: 'sem .render()' });
           } else {
-            await new Promise((res, rej) => {
+            await withTimeout(new Promise((res, rej) => {
               const s = document.createElement('script');
               s.src = src.url; s.onload = res;
               s.onerror = () => rej(new Error('bloqueado/404'));
               document.head.appendChild(s);
-            });
+            }));
             if (window.pug && window.pug.render) return { ok: true, source: src.url, errors };
             errors.push({ url: src.url, reason: 'window.pug ausente' });
           }
@@ -70,10 +73,6 @@
             <span class="brand-logo" id="brand-logo"></span>
             <span class="brand-name text-base hidden sm:inline">Pug Render</span>
         </a>
-        <button id="templates-btn" class="btn-pug btn-pug-ghost" title="Começar de um template">
-            <i class="fas fa-layer-group"></i>
-            <span class="hidden md:inline">Templates</span>
-        </button>
         <div class="flex-1"></div>
         <button id="theme-btn" class="btn-pug btn-pug-ghost btn-pug-icon" aria-label="Alternar tema" title="Alternar tema claro/escuro">
             <i class="fas fa-moon" id="theme-icon"></i>
@@ -107,7 +106,7 @@
                     script.js
                 </div>
                 <div class="flex-1"></div>
-                <button id="clear-btn" class="btn-pug btn-pug-ghost" style="padding: 4px 8px; font-size: 11px;" title="Limpar arquivo ativo">
+                <button id="clear-btn" class="btn-pug btn-pug-ghost btn-pug-icon" aria-label="Limpar arquivo ativo" title="Limpar arquivo ativo">
                     <i class="fas fa-eraser"></i>
                 </button>
             </div>
@@ -190,18 +189,6 @@
 
     <div id="toast" role="status" aria-live="polite"></div>
 
-    <dialog id="templates-modal">
-        <div class="modal-content">
-            <header class="modal-header">
-                <h2>Começar de um template</h2>
-                <form method="dialog">
-                    <button class="btn-pug btn-pug-ghost btn-pug-icon" aria-label="Fechar"><i class="fas fa-xmark"></i></button>
-                </form>
-            </header>
-            <div class="template-grid" id="template-grid"></div>
-        </div>
-    </dialog>
-
     <div id="critical-error" role="alert">
         <h2><i class="fas fa-circle-exclamation"></i> Falha ao inicializar o playground</h2>
         <p>Um ou mais recursos críticos não puderam ser carregados.</p>
@@ -219,11 +206,10 @@
 
     <input type="file" id="import-input" accept=".pug,.jade,.css,.js" multiple hidden>
 
-    <!-- JS próprio (ordem importa: config → utils → compile → templates → editor → app) -->
+    <!-- JS próprio (ordem importa: config → utils → compile → editor → app) -->
     <script src="js/config.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/compile.js"></script>
-    <script src="js/templates.js"></script>
     <script src="js/editor.js"></script>
     <script src="js/app.js"></script>
 </body>

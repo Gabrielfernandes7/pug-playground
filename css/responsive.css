@@ -11,6 +11,8 @@
     .preview-nav-btn { width: 40px; height: 40px; }
     .device-btn { min-width: 40px; min-height: 40px; justify-content: center; }
     .file-tab { padding: 10px 14px; }
+    /* Barra de abas com altura para caber o botão de limpar de 40px */
+    .file-tabs { height: 48px !important; }
 }
 
 /* Barra de alternância Código | Preview: só aparece no celular */
@@ -73,9 +75,6 @@
     #console-panel { max-height: 35vh; }
     #toast { bottom: 76px; }
 
-    dialog { width: calc(100vw - 24px); }
-    .modal-content { min-width: 0; width: 100%; padding: 16px; }
-    .template-grid { grid-template-columns: 1fr; }
 }
 
 /* ---------- Tablet ---------- */

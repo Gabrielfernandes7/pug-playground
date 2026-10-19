@@ -10,8 +10,17 @@ PUG.showCritical = function(errors) {
 };
 
 PUG.boot = async function() {
-    const { CONFIG, FILE_META, PUG_SVG, PUG_LOGO, CSS_SVG, JS_SVG, TEMPLATES,
+    const { CONFIG, FILE_META, PUG_SVG, PUG_LOGO, CSS_SVG, JS_SVG, STARTER,
             $, esc, storage, toast, compileAll } = PUG;
+
+    // Brand & File icons (antes do await: não dependem do Pug e não devem esperar o CDN)
+    $('brand-logo').innerHTML = PUG_LOGO;
+    document.querySelectorAll('[data-file-icon]').forEach(el => {
+        const file = el.parentElement.dataset.file;
+        if (file === 'pug') el.innerHTML = PUG_SVG;
+        else if (file === 'css') el.innerHTML = CSS_SVG;
+        else if (file === 'js') el.innerHTML = JS_SVG;
+    });
 
     const pugResult = await (window.__pugReady || Promise.resolve({ ok: false, errors: [] }));
     if (!pugResult.ok) return PUG.showCritical(pugResult.errors);
@@ -29,9 +38,6 @@ PUG.boot = async function() {
     const shareBtn        = $('share-btn');
     const themeBtn        = $('theme-btn');
     const themeIcon       = $('theme-icon');
-    const templatesBtn    = $('templates-btn');
-    const templatesModal  = $('templates-modal');
-    const templateGrid    = $('template-grid');
     const statusText      = $('status-text');
     const statusDot       = $('status-dot');
     const compileTime     = $('compile-time');
@@ -49,19 +55,10 @@ PUG.boot = async function() {
     const consoleClearBtn = $('console-clear-btn');
     const consoleChevron  = $('console-chevron');
 
-    // Brand & File icons
-    $('brand-logo').innerHTML = PUG_LOGO;
-    document.querySelectorAll('[data-file-icon]').forEach(el => {
-        const file = el.parentElement.dataset.file;
-        if (file === 'pug') el.innerHTML = PUG_SVG;
-        else if (file === 'css') el.innerHTML = CSS_SVG;
-        else if (file === 'js') el.innerHTML = JS_SVG;
-    });
-
     let state = {
-        pug: TEMPLATES.landing.pug,
-        css: TEMPLATES.landing.css,
-        js:  TEMPLATES.landing.js,
+        pug: STARTER.pug,
+        css: STARTER.css,
+        js:  STARTER.js,
     };
     let activeFile = 'pug';
     let lastGoodHTML = '';
@@ -211,7 +208,7 @@ PUG.boot = async function() {
         clearErrorHighlight();
     }
 
-    const emptyStateDoc = () => `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{margin:0;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;background:#faf6ef;color:#998878}</style></head><body><div style="text-align:center"><div style="font-size:32px;margin-bottom:12px">✏️</div><p style="font-size:14px">Comece a digitar Pug ou clique em <strong>Templates</strong>.</p></div></body></html>`;
+    const emptyStateDoc = () => `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{margin:0;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;background:#faf6ef;color:#998878}</style></head><body><div style="text-align:center"><div style="font-size:32px;margin-bottom:12px">✏️</div><p style="font-size:14px">Comece a digitar Pug para ver o resultado.</p></div></body></html>`;
     const errorStateDoc = () => `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{margin:0;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;background:#faf6ef;color:#998878}</style></head><body><div style="text-align:center"><div style="font-size:32px;margin-bottom:12px">⚠️</div><p style="font-size:14px">Corrija o erro acima para ver o resultado.</p></div></body></html>`;
 
     // Único ponto que escreve no iframe. srcdoc evita src="index.html", que quebra em file://.
@@ -371,23 +368,6 @@ PUG.boot = async function() {
             prompt('Copie o link:', url);
         }
     });
-
-    Object.entries(TEMPLATES).forEach(([key, tpl]) => {
-        const card = document.createElement('button');
-        card.className = 'template-card';
-        card.innerHTML = `<i class="fas ${tpl.icon}"></i><strong>${esc(tpl.name)}</strong><span>${esc(tpl.description)}</span>`;
-        card.addEventListener('click', () => {
-            docs.pug.setValue(tpl.pug);
-            docs.css.setValue(tpl.css);
-            docs.js.setValue(tpl.js);
-            templatesModal.close();
-            switchTab('pug');
-            renderAll();
-            toast(`Template "${tpl.name}" carregado`);
-        });
-        templateGrid.appendChild(card);
-    });
-    templatesBtn.addEventListener('click', () => templatesModal.showModal());
 
     themeBtn.addEventListener('click', () => applyTheme(currentTheme === 'dark' ? 'light' : 'dark'));
 

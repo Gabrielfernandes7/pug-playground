@@ -9,9 +9,7 @@ Abra `index.html` no navegador, ou sirva a pasta com qualquer servidor estático
 ```
 index.html          layout (header, editor, preview, console)
 css/                tokens (tema claro/escuro), layout, editor, componentes, responsivo
-js/                 config, utils, compile, editor, app (orquestrador), templates (gerado)
-templates/          fonte dos templates: <id>/{index.pug,styles.css,script.js} + index.json
-scripts/            build-templates.js
+js/                 config (conteúdo inicial), utils, compile, editor, app (orquestrador)
 assets/             logo e ícones
 ```
 
@@ -25,15 +23,9 @@ Essa é a única escrita no iframe. Erros de compilação mantêm o último prev
 
 O iframe usa `sandbox="allow-scripts allow-popups allow-forms"`. **Não** adicione `allow-same-origin`: com `allow-scripts` ele permitiria que o código do preview escape do sandbox.
 
-## Templates
+## Conteúdo inicial
 
-Edite os arquivos em `templates/<id>/` e gere o `js/templates.js`:
-
-```bash
-node scripts/build-templates.js
-```
-
-Para adicionar um template, crie a pasta e inclua o `id` em `templates/index.json`. A ordem do array é a ordem da galeria. `js/templates.js` é gerado: não edite à mão.
+O playground abre com o conteúdo de `PUG.STARTER`, em `js/config.js`. Para mudar o ponto de partida, edite esse objeto.
 
 ## Atalhos
 

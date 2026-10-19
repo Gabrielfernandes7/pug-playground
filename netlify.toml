@@ -1,0 +1,28 @@
+# Site estático: sem build, publica a raiz do repositório.
+[build]
+  publish = "."
+  command = ""
+
+# HTML sempre revalidado: uma mudança de deploy aparece na hora.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# CSS, JS e imagens: cache de 1 dia. Visitas repetidas não baixam esses arquivos de novo,
+# o que reduz requisições no Netlify. Após um deploy, quem já visitou pode ver a versão
+# antiga por até 1 dia (ou dar Ctrl+Shift+R).
+[[headers]]
+  for = "/css/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
+
+[[headers]]
+  for = "/js/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"

@@ -17,6 +17,13 @@ PUG.FILE_META = {
     js:  { label: 'script.js',  mode: 'javascript', badge: 'fa-js' },
 };
 
+// Conteúdo inicial do playground: as três abas começam vazias
+PUG.STARTER = Object.freeze({
+    pug: '',
+    css: '',
+    js: '',
+});
+
 PUG.PUG_SVG = `<img src="assets/pug.png" alt="Pug" aria-hidden="true">`;
 PUG.PUG_LOGO = `<img src="assets/pug-logo.svg" alt="" aria-hidden="true">`;
 

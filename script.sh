@@ -15,7 +15,7 @@
   echo "| Arquivo | Linhas | Bytes |"
   echo "|---|---:|---:|"
 
-  FILES="README.md index.html assets/pug-logo.svg css/tokens.css css/layout.css css/codemirror.css css/components.css js/config.js js/utils.js js/compile.js js/templates.js js/editor.js js/app.js script.sh"
+  FILES="README.md index.html assets/pug-logo.svg css/tokens.css css/layout.css css/codemirror.css css/components.css js/config.js js/utils.js js/compile.js js/editor.js js/app.js script.sh"
 
   for f in $FILES; do
     [ -f "$f" ] || continue
