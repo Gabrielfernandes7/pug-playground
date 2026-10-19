@@ -1,0 +1,1777 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pug Render • Playground</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/css/css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/xml/xml.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
+
+    <script>
+    window.__pugReady = (async () => {
+      const sources = [
+        { type: 'esm', url: 'https://esm.sh/pug@3.0.2' },
+        { type: 'esm', url: 'https://cdn.jsdelivr.net/npm/pug@3.0.2/+esm' },
+        { type: 'esm', url: 'https://unpkg.com/pug@3.0.2/+esm' },
+        { type: 'esm', url: 'https://cdn.skypack.dev/pug@3.0.2' },
+        { type: 'umd', url: 'https://bundle.run/pug@3.0.2' },
+      ];
+      const errors = [];
+      for (const src of sources) {
+        try {
+          if (src.type === 'esm') {
+            const mod = await import(src.url);
+            const p = mod.default || mod;
+            if (p && typeof p.render === 'function') { window.pug = p; return { ok: true, source: src.url, errors }; }
+            errors.push({ url: src.url, reason: 'sem .render()' });
+          } else {
+            await new Promise((res, rej) => {
+              const s = document.createElement('script');
+              s.src = src.url; s.onload = res;
+              s.onerror = () => rej(new Error('bloqueado/404'));
+              document.head.appendChild(s);
+            });
+            if (window.pug && window.pug.render) return { ok: true, source: src.url, errors };
+            errors.push({ url: src.url, reason: 'window.pug ausente' });
+          }
+        } catch (e) { errors.push({ url: src.url, reason: e.message || String(e) }); }
+      }
+      return { ok: false, errors };
+    })();
+    </script>
+
+    <script>
+    // Syntax highlight do Pug (custom mode)
+    if (typeof CodeMirror !== 'undefined') {
+      CodeMirror.defineMode('pug', () => {
+        const JS_KEYWORDS = /^(const|let|var|function|return|if|else|for|while|new|this|true|false|null|undefined|typeof|instanceof|class|import|export|from|of|in|await|async|yield)\b/;
+        function js(stream) {
+          if (stream.match(/^"(?:[^"\\]|\\.)*"|^'(?:[^'\\]|\\.)*'|^`(?:[^`\\]|\\.)*`/)) return 'string';
+          if (stream.match(/^\/\/.*/)) { stream.skipToEnd(); return 'comment'; }
+          if (stream.match(/^\d+(?:\.\d+)?/)) return 'number';
+          if (stream.match(JS_KEYWORDS)) return 'keyword';
+          if (stream.match(/^[a-zA-Z_$][\w$]*/)) return 'variable';
+          if (stream.match(/^[()\[\]{}]/)) return 'bracket';
+          if (stream.match(/^[+\-*/%=<>!&|?:.,;]/)) return 'operator';
+          stream.next(); return null;
+        }
+        return {
+          startState: () => ({ jsLine: false, jsIndent: -1 }),
+          token(stream, state) {
+            if (stream.sol()) {
+              state.jsLine = false;
+              const realIndent = stream.string.search(/\S/);
+              const indent = realIndent === -1 ? stream.string.length : realIndent;
+              if (state.jsIndent >= 0 && indent <= state.jsIndent) state.jsIndent = -1;
+              stream.eatSpace();
+              if (stream.eol()) return null;
+              if (state.jsIndent >= 0) { state.jsLine = true; return js(stream); }
+              if (stream.match('//-') || stream.match('//')) { stream.skipToEnd(); return 'comment'; }
+              if (stream.match(/^doctype\b/i)) { stream.skipToEnd(); return 'keyword'; }
+              if (stream.match(/^else\s+if\b/)) { state.jsLine = true; return 'keyword'; }
+              if (stream.match(/^else\b|^default\b/)) return 'keyword';
+              if (stream.match(/^(each|for|if|unless|while|case|when)\b/)) { state.jsLine = true; return 'keyword'; }
+              if (stream.match(/^(mixin|include|extends|block|append|prepend|yield)\b/)) return 'keyword';
+              if (stream.match(/^\+[\w-]+/)) return 'def';
+              if (stream.match(/^-(?!-)/)) { state.jsIndent = indent; state.jsLine = true; return 'variable-3'; }
+              if (stream.match(/^\|/)) return 'operator';
+              if (stream.match(/^[a-zA-Z][\w-]*/)) return 'tag';
+              if (stream.match(/^[.#][\w-]+/)) return 'atom';
+              if (stream.match(/^&attributes\b/)) return 'def';
+              stream.next(); return null;
+            }
+            if (state.jsLine) return js(stream);
+            if (stream.match(/^"(?:[^"\\]|\\.)*"|^'(?:[^'\\]|\\.)*'/)) return 'string';
+            if (stream.match('#{')) {
+              let depth = 1;
+              while (!stream.eol()) {
+                const c = stream.peek();
+                if (c === '}') { stream.next(); if (--depth === 0) break; }
+                else if (c === '{') { stream.next(); depth++; }
+                else stream.next();
+              }
+              return 'bracket';
+            }
+            if (stream.match(/^!=/)) { state.jsLine = true; return 'operator'; }
+            if (stream.match(/^=(?!=)/)) { state.jsLine = true; return 'operator'; }
+            if (stream.match(/^[()\[\]{}]/)) return 'bracket';
+            if (stream.match(/^[.,:]/)) return 'punctuation';
+            if (stream.match(/^[+\-*/<>!&|]/)) return 'operator';
+            stream.next(); return null;
+          }
+        };
+      });
+
+      // Autocomplete de snippets Pug
+      CodeMirror.registerHelper('hint', 'pug', (cm) => {
+        const cur = cm.getCursor();
+        const line = cm.getLine(cur.line);
+        let start = cur.ch, end = cur.ch;
+        while (end && /[\w-]/.test(line.charAt(end - 1))) end--;
+        const word = line.slice(end, start).toLowerCase();
+        const snippets = [
+          { text: 'doctype html', displayText: 'doctype html' },
+          { text: 'html(lang="pt-BR")', displayText: 'html(lang=...)' },
+          { text: 'meta(charset="UTF-8")', displayText: 'meta charset' },
+          { text: 'meta(name="viewport" content="width=device-width, initial-scale=1")', displayText: 'meta viewport' },
+          { text: 'each item in items', displayText: 'each...' },
+          { text: 'if condition', displayText: 'if...' },
+          { text: 'else if condition', displayText: 'else if...' },
+          { text: 'unless condition', displayText: 'unless...' },
+          { text: 'mixin name(arg)\n  //- conteúdo', displayText: 'mixin...' },
+          { text: 'include ./partial.pug', displayText: 'include...' },
+          { text: 'extends layout', displayText: 'extends...' },
+          { text: 'block content', displayText: 'block...' },
+          { text: 'a(href="#" class="link") Texto', displayText: 'a link' },
+          { text: 'img(src="" alt="")', displayText: 'img...' },
+          { text: 'div.container', displayText: 'div.classe' },
+          { text: 'section.hero', displayText: 'section.hero' },
+          { text: 'button.btn(type="button")', displayText: 'button...' },
+          { text: 'script(src="")', displayText: 'script...' },
+          { text: 'link(rel="stylesheet" href="")', displayText: 'link css' },
+        ];
+        return {
+          list: snippets.filter(s => !word || s.text.toLowerCase().startsWith(word)),
+          from: CodeMirror.Pos(cur.line, end),
+          to: CodeMirror.Pos(cur.line, start),
+        };
+      });
+    }
+    </script>
+
+    <style>
+        /*  TEMA PUG  */
+        /* Direção visual: bege/marrom/âmbar, formas suaves, serifa no logo */
+
+        :root {
+            --pug-radius-sm: 8px;
+            --pug-radius-md: 12px;
+            --pug-radius-lg: 16px;
+            --pug-font-serif: ui-serif, 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+            --pug-font-mono: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+        }
+
+        /* Dark (padrão) */
+        [data-theme="dark"] {
+            --color-base-100: oklch(24% 0.018 55);
+            --color-base-200: oklch(20% 0.016 55);
+            --color-base-300: oklch(15% 0.014 55);
+            --color-base-content: oklch(94% 0.015 80);
+            --color-primary: oklch(72% 0.14 60);
+            --color-primary-content: oklch(18% 0.03 60);
+            --color-secondary: oklch(62% 0.13 35);
+            --color-accent: oklch(85% 0.06 80);
+            --color-neutral: oklch(30% 0.02 55);
+            --color-success: oklch(72% 0.14 145);
+            --color-warning: oklch(80% 0.14 85);
+            --color-error: oklch(65% 0.20 25);
+            --color-info: oklch(70% 0.12 230);
+
+            --cm-bg: #1c1713;
+            --cm-fg: #f5e8d5;
+            --cm-gutter-bg: #1c1713;
+            --cm-border: rgba(255,255,255,.05);
+            --cm-line-num: #6b5a4c;
+            --cm-cursor: #f0a050;
+            --cm-selection: rgba(240,160,80,.22);
+            --cm-active-line: rgba(255,255,255,.025);
+            --cm-keyword: #f0a050;
+            --cm-def: #ffd9a0;
+            --cm-variable: #f5e8d5;
+            --cm-string: #a8c97a;
+            --cm-number: #e8905a;
+            --cm-comment: #7d6d5f;
+            --cm-tag: #e8845a;
+            --cm-atom: #d4a574;
+            --cm-bracket: #d4b48c;
+            --cm-operator: #e8905a;
+            --cm-punctuation: #d4b48c;
+
+            --surface-1: rgba(255,255,255,.03);
+            --surface-2: rgba(255,255,255,.06);
+            --border-subtle: rgba(255,255,255,.07);
+            --border-medium: rgba(255,255,255,.12);
+        }
+
+        /* Light */
+        [data-theme="light"] {
+            --color-base-100: oklch(98% 0.008 80);
+            --color-base-200: oklch(95% 0.012 80);
+            --color-base-300: oklch(91% 0.016 80);
+            --color-base-content: oklch(22% 0.03 55);
+            --color-primary: oklch(55% 0.13 50);
+            --color-primary-content: oklch(98% 0.008 80);
+            --color-secondary: oklch(58% 0.11 30);
+            --color-accent: oklch(72% 0.08 80);
+            --color-neutral: oklch(72% 0.02 80);
+            --color-success: oklch(55% 0.14 145);
+            --color-warning: oklch(72% 0.14 80);
+            --color-error: oklch(55% 0.20 25);
+            --color-info: oklch(58% 0.12 230);
+
+            --cm-bg: #faf6ef;
+            --cm-fg: #2a221c;
+            --cm-gutter-bg: #f3ecdf;
+            --cm-border: rgba(0,0,0,.07);
+            --cm-line-num: #a89886;
+            --cm-cursor: #8b5a3c;
+            --cm-selection: rgba(139,90,60,.18);
+            --cm-active-line: rgba(0,0,0,.025);
+            --cm-keyword: #b35a1f;
+            --cm-def: #6b3a1c;
+            --cm-variable: #2a221c;
+            --cm-string: #4a7c20;
+            --cm-number: #b35a1f;
+            --cm-comment: #998878;
+            --cm-tag: #8b5a3c;
+            --cm-atom: #6b4a2c;
+            --cm-bracket: #7a5a3c;
+            --cm-operator: #b35a1f;
+            --cm-punctuation: #7a5a3c;
+
+            --surface-1: rgba(0,0,0,.02);
+            --surface-2: rgba(0,0,0,.04);
+            --border-subtle: rgba(0,0,0,.08);
+            --border-medium: rgba(0,0,0,.13);
+        }
+
+        html, body { height: 100%; margin: 0; overflow: hidden; }
+        body { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; }
+
+        /*  CodeMirror (tema warm)  */
+        .cm-s-pug.CodeMirror {
+            height: 100%;
+            font-size: 13px;
+            font-family: var(--pug-font-mono);
+            background: var(--cm-bg);
+            color: var(--cm-fg);
+        }
+        .cm-s-pug .CodeMirror-gutters {
+            background: var(--cm-gutter-bg);
+            border-right: 1px solid var(--cm-border);
+        }
+        .cm-s-pug .CodeMirror-linenumber { color: var(--cm-line-num); }
+        .cm-s-pug .CodeMirror-cursor { border-left: 2px solid var(--cm-cursor); }
+        .cm-s-pug .CodeMirror-selected { background: var(--cm-selection); }
+        .cm-s-pug .CodeMirror-activeline-background { background: var(--cm-active-line); }
+        .cm-s-pug .cm-keyword { color: var(--cm-keyword); font-weight: 600; }
+        .cm-s-pug .cm-def { color: var(--cm-def); }
+        .cm-s-pug .cm-variable,
+        .cm-s-pug .cm-variable-2,
+        .cm-s-pug .cm-variable-3 { color: var(--cm-variable); }
+        .cm-s-pug .cm-string,
+        .cm-s-pug .cm-string-2 { color: var(--cm-string); }
+        .cm-s-pug .cm-number { color: var(--cm-number); }
+        .cm-s-pug .cm-comment { color: var(--cm-comment); font-style: italic; }
+        .cm-s-pug .cm-tag { color: var(--cm-tag); }
+        .cm-s-pug .cm-atom { color: var(--cm-atom); }
+        .cm-s-pug .cm-bracket { color: var(--cm-bracket); }
+        .cm-s-pug .cm-operator { color: var(--cm-operator); }
+        .cm-s-pug .cm-punctuation { color: var(--cm-punctuation); }
+        .cm-s-pug .cm-property { color: var(--cm-def); }
+        .cm-s-pug .cm-builtin { color: var(--cm-keyword); }
+        .cm-s-pug .cm-qualifier { color: var(--cm-def); }
+        .cm-s-pug .cm-error { color: #e85858; }
+        .CodeMirror-hints {
+            background: var(--color-base-100);
+            border: 1px solid var(--border-medium);
+            border-radius: var(--pug-radius-sm);
+            box-shadow: 0 8px 24px rgba(0,0,0,.3);
+            font-family: var(--pug-font-mono);
+            font-size: 12px;
+        }
+        .CodeMirror-hint { color: var(--color-base-content); padding: 4px 10px; }
+        .CodeMirror-hint-active { background: var(--color-primary); color: var(--color-primary-content); }
+
+        .cm-error-line { background: rgba(239,68,68,.20) !important; }
+
+        /*  Layout principal  */
+        .resizer {
+            width: 5px; cursor: col-resize;
+            background: var(--border-subtle);
+            transition: background .15s;
+        }
+        .resizer:hover, .resizer.active { background: var(--color-primary); }
+
+        /*  Editor  */
+        .editor-host { flex: 1; overflow: hidden; position: relative; }
+        .editor-host.dragging::after {
+            content: 'Solte para importar';
+            position: absolute; inset: 8px;
+            display: flex; align-items: center; justify-content: center;
+            border: 2px dashed var(--color-primary);
+            border-radius: var(--pug-radius-lg);
+            background: color-mix(in oklch, var(--color-primary) 10%, transparent);
+            color: var(--color-primary);
+            font-weight: 600;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .file-tab {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 8px 14px; font-size: 12px;
+            font-family: var(--pug-font-mono);
+            border-top: 2px solid transparent;
+            border-right: 1px solid var(--border-subtle);
+            color: color-mix(in oklch, var(--color-base-content) 55%, transparent);
+            cursor: pointer;
+            transition: all .15s;
+            user-select: none;
+        }
+        .file-tab:hover { color: color-mix(in oklch, var(--color-base-content) 85%, transparent); }
+        .file-tab.active {
+            background: var(--cm-bg);
+            border-top-color: var(--color-primary);
+            color: var(--color-base-content);
+        }
+
+        .file-tab-icon {
+            width: 14px; height: 14px; display: inline-flex;
+            align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .file-tab-icon svg { width: 100%; height: 100%; }
+
+        /*  Preview  */
+        #preview-pane { display: flex; flex-direction: column; }
+        #iframe-wrapper {
+            flex: 1;
+            overflow: auto;
+            background: color-mix(in oklch, var(--color-base-300) 60%, transparent);
+            display: flex;
+            align-items: stretch;
+            justify-content: center;
+            padding: 8px;
+            position: relative;
+        }
+        #preview-frame {
+            border: 0;
+            background: #fff;
+            box-shadow: 0 4px 24px rgba(0,0,0,.25);
+            border-radius: var(--pug-radius-md);
+            width: 100%;
+            max-width: 100%;
+            transition: max-width .3s ease, width .3s ease;
+        }
+
+        /*  Devices  */
+        .device-btn {
+            padding: 4px 10px; border-radius: 6px;
+            font-size: 11px;
+            color: color-mix(in oklch, var(--color-base-content) 55%, transparent);
+            transition: all .15s;
+            cursor: pointer;
+            display: inline-flex; align-items: center; gap: 4px;
+        }
+        .device-btn:hover { background: var(--surface-2); color: var(--color-base-content); }
+        .device-btn.active {
+            background: var(--color-primary);
+            color: var(--color-primary-content);
+        }
+
+        /*  Erro banner  */
+        #error-banner {
+            display: none;
+            background: color-mix(in oklch, var(--color-error) 12%, transparent);
+            border-bottom: 1px solid color-mix(in oklch, var(--color-error) 35%, transparent);
+            padding: 8px 12px; font-size: 12px;
+            color: var(--color-error);
+            max-height: 140px; overflow-y: auto;
+            font-family: var(--pug-font-mono);
+            white-space: pre-wrap; word-break: break-word;
+        }
+        #error-banner.visible { display: block; }
+        #error-banner .title {
+            font-weight: 700;
+            font-family: system-ui, sans-serif; font-size: 11px;
+            text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px;
+        }
+
+        /*  Overlay preview desatualizado  */
+        #outdated-overlay {
+            position: absolute;
+            inset: 8px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(20,15,10,.35);
+            backdrop-filter: blur(2px);
+            border-radius: var(--pug-radius-md);
+            pointer-events: none;
+            z-index: 5;
+        }
+        #outdated-overlay.visible { display: flex; }
+        .outdated-badge {
+            display: flex; align-items: center; gap: 10px;
+            padding: 12px 18px;
+            background: var(--color-base-100);
+            border: 1px solid color-mix(in oklch, var(--color-warning) 60%, transparent);
+            border-radius: var(--pug-radius-md);
+            box-shadow: 0 8px 32px rgba(0,0,0,.4);
+            color: var(--color-base-content);
+        }
+        .outdated-badge i { color: var(--color-warning); font-size: 18px; }
+        .outdated-badge strong { display: block; font-size: 13px; }
+        .outdated-badge span { font-size: 11px; opacity: .7; }
+
+        /*  Console  */
+        #console-panel {
+            display: flex;
+            flex-direction: column;
+            background: var(--cm-bg);
+            border-top: 1px solid var(--border-subtle);
+            max-height: 200px;
+            transition: max-height .2s;
+        }
+        #console-panel.collapsed { max-height: 32px; }
+        #console-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 6px 12px;
+            font-size: 11px; font-family: var(--pug-font-mono);
+            color: color-mix(in oklch, var(--color-base-content) 70%, transparent);
+            cursor: pointer;
+            user-select: none;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        #console-header:hover { background: var(--surface-1); }
+        #console-badge {
+            display: none;
+            margin-left: 6px;
+            padding: 1px 6px;
+            border-radius: 10px;
+            background: var(--color-error);
+            color: var(--color-error-content);
+            font-size: 10px;
+            font-weight: 600;
+        }
+        #console-badge.visible { display: inline-block; }
+        #console-output {
+            flex: 1;
+            overflow-y: auto;
+            font-family: var(--pug-font-mono);
+            font-size: 11px;
+        }
+        #console-output:empty::before {
+            content: 'Console vazio. Execute seu código para ver logs.';
+            display: block;
+            padding: 12px;
+            text-align: center;
+            color: color-mix(in oklch, var(--color-base-content) 35%, transparent);
+            font-style: italic;
+        }
+        .console-line {
+            display: flex;
+            gap: 6px;
+            padding: 3px 12px;
+            border-bottom: 1px solid var(--border-subtle);
+            color: var(--cm-fg);
+            word-break: break-word;
+        }
+        .console-line .console-time {
+            color: var(--cm-line-num);
+            flex-shrink: 0;
+        }
+        .console-line.console-error { color: var(--color-error); background: color-mix(in oklch, var(--color-error) 8%, transparent); }
+        .console-line.console-warn { color: var(--color-warning); }
+        .console-line.console-info { color: var(--color-info); }
+
+        /*  Header / brand  */
+        .brand-name {
+            font-family: var(--pug-font-serif);
+            letter-spacing: -0.02em;
+        }
+        .brand-logo {
+            width: 34px; height: 34px;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .brand-logo svg { width: 100%; height: 100%; }
+
+        /*  Toast  */
+        #toast {
+            position: fixed;
+            bottom: 40px; left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            padding: 10px 20px;
+            background: var(--color-base-100);
+            border: 1px solid var(--border-medium);
+            border-radius: var(--pug-radius-md);
+            box-shadow: 0 8px 32px rgba(0,0,0,.4);
+            font-size: 13px;
+            opacity: 0;
+            pointer-events: none;
+            transition: all .25s;
+            z-index: 10000;
+        }
+        #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        /*  Modal  */
+        dialog {
+            border: 0;
+            padding: 0;
+            background: transparent;
+            max-width: 90vw;
+            max-height: 90vh;
+        }
+        dialog::backdrop {
+            background: rgba(0,0,0,.6);
+            backdrop-filter: blur(4px);
+        }
+        .modal-content {
+            background: var(--color-base-100);
+            color: var(--color-base-content);
+            border: 1px solid var(--border-medium);
+            border-radius: var(--pug-radius-lg);
+            box-shadow: 0 24px 48px rgba(0,0,0,.4);
+            padding: 24px;
+            min-width: 520px;
+            max-width: 90vw;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .modal-header h2 {
+            font-family: var(--pug-font-serif);
+            font-size: 22px;
+            margin: 0;
+        }
+        .template-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+        }
+        .template-card {
+            display: flex; flex-direction: column; gap: 8px;
+            padding: 16px;
+            background: var(--surface-1);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--pug-radius-md);
+            cursor: pointer;
+            transition: all .15s;
+            text-align: left;
+            color: inherit;
+            font-family: inherit;
+        }
+        .template-card:hover {
+            border-color: var(--color-primary);
+            background: color-mix(in oklch, var(--color-primary) 8%, transparent);
+            transform: translateY(-2px);
+        }
+        .template-card i {
+            font-size: 20px;
+            color: var(--color-primary);
+        }
+        .template-card strong { font-size: 14px; }
+        .template-card span { font-size: 12px; opacity: .65; line-height: 1.4; }
+
+        /*  Critical error  */
+        #critical-error {
+            display: none; position: fixed; inset: 0; z-index: 9999;
+            background: var(--color-base-300);
+            color: var(--color-base-content);
+            padding: 40px; overflow-y: auto;
+            font-family: system-ui, sans-serif;
+        }
+        #critical-error.visible { display: block; }
+        #critical-error h2 { color: var(--color-error); margin-top: 0; font-family: var(--pug-font-serif); }
+        #critical-error .diag {
+            background: var(--surface-1); border: 1px solid var(--border-medium);
+            border-radius: var(--pug-radius-md); padding: 14px; margin: 16px 0;
+            font-family: var(--pug-font-mono); font-size: 12px;
+            white-space: pre-wrap;
+        }
+        #critical-error ul { line-height: 1.8; font-size: 14px; opacity: .8; }
+
+        /*  Botões  */
+        .btn-pug {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 7px 14px;
+            border-radius: var(--pug-radius-sm);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all .15s;
+            font-family: inherit;
+        }
+        .btn-pug-primary {
+            background: var(--color-primary);
+            color: var(--color-primary-content);
+        }
+        .btn-pug-primary:hover {
+            background: color-mix(in oklch, var(--color-primary) 85%, black);
+        }
+        .btn-pug-ghost {
+            background: transparent;
+            color: color-mix(in oklch, var(--color-base-content) 75%, transparent);
+            border-color: var(--border-subtle);
+        }
+        .btn-pug-ghost:hover {
+            background: var(--surface-1);
+            color: var(--color-base-content);
+        }
+        .btn-pug-icon {
+            padding: 7px;
+            width: 32px; height: 32px;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body class="flex flex-col bg-base-300 text-base-content">
+
+    <!--  HEADER  -->
+    <header class="flex items-center px-3 gap-2 shrink-0 border-b" style="height: 56px; background: var(--color-base-100); border-color: var(--border-subtle);">
+        <a href="#" class="flex items-center gap-2 mr-2">
+            <span class="brand-logo" id="brand-logo"></span>
+            <span class="brand-name text-base hidden sm:inline">Pug Render</span>
+        </a>
+
+        <button id="templates-btn" class="btn-pug btn-pug-ghost" title="Começar de um template">
+            <i class="fas fa-layer-group"></i>
+            <span class="hidden md:inline">Templates</span>
+        </button>
+
+        <div class="flex-1"></div>
+
+        <button id="theme-btn" class="btn-pug btn-pug-ghost btn-pug-icon" aria-label="Alternar tema" title="Alternar tema claro/escuro">
+            <i class="fas fa-moon" id="theme-icon"></i>
+        </button>
+        <button id="import-btn" class="btn-pug btn-pug-ghost" title="Importar arquivo (.pug, .css, .js)">
+            <i class="fas fa-file-import"></i>
+            <span class="hidden md:inline">Importar</span>
+        </button>
+        <button id="share-btn" class="btn-pug btn-pug-ghost" title="Compartilhar por link">
+            <i class="fas fa-share-nodes"></i>
+            <span class="hidden md:inline">Share</span>
+        </button>
+        <button id="run-btn" class="btn-pug btn-pug-primary" title="Ctrl+Enter">
+            <i class="fas fa-play"></i> Run
+        </button>
+    </header>
+
+    <!--  MAIN  -->
+    <div id="main-area" class="flex flex-1 overflow-hidden" style="min-height: 0;">
+
+        <!-- EDITOR -->
+        <div id="editor-pane" class="flex flex-col overflow-hidden" style="width: 50%; min-width: 280px; background: var(--cm-bg);">
+            <div class="flex items-center shrink-0 border-b" style="height: 38px; background: var(--color-base-200); border-color: var(--border-subtle);">
+                <div class="file-tab active" data-file="pug">
+                    <span class="file-tab-icon" data-file-icon></span>
+                    index.pug
+                </div>
+                <div class="file-tab" data-file="css">
+                    <span class="file-tab-icon" data-file-icon></span>
+                    styles.css
+                </div>
+                <div class="file-tab" data-file="js">
+                    <span class="file-tab-icon" data-file-icon></span>
+                    script.js
+                </div>
+                <div class="flex-1"></div>
+                <button id="clear-btn" class="btn-pug btn-pug-ghost" style="padding: 4px 8px; font-size: 11px;" title="Limpar arquivo ativo">
+                    <i class="fas fa-eraser"></i>
+                </button>
+            </div>
+            <div class="editor-host" id="editor-host"></div>
+        </div>
+
+        <div id="resizer" class="resizer shrink-0" role="separator" aria-orientation="vertical" aria-label="Redimensionar painéis"></div>
+
+        <!-- PREVIEW -->
+        <div id="preview-pane" class="flex flex-col overflow-hidden flex-1" style="min-width: 280px;">
+            <div class="flex items-center justify-between px-2 shrink-0 border-b" style="height: 38px; background: var(--color-base-200); border-color: var(--border-subtle);">
+                <div class="flex items-center gap-1">
+                    <button class="device-btn active" data-width="0" title="Desktop">
+                        <i class="fas fa-desktop"></i>
+                    </button>
+                    <button class="device-btn" data-width="768" title="Tablet (768px)">
+                        <i class="fas fa-tablet-screen-button"></i>
+                    </button>
+                    <button class="device-btn" data-width="375" title="Mobile (375px)">
+                        <i class="fas fa-mobile-screen"></i>
+                    </button>
+                </div>
+                <div class="flex items-center gap-1">
+                    <span id="status-dot" class="w-2 h-2 rounded-full inline-block" style="background: var(--color-success);" aria-hidden="true"></span>
+                    <span id="status-text" class="text-xs mr-2" style="color: color-mix(in oklch, var(--color-base-content) 55%, transparent);" aria-live="polite">Carregando…</span>
+                    <button id="refresh-btn" class="btn-pug btn-pug-ghost btn-pug-icon" aria-label="Recarregar" title="Recarregar (Ctrl+Enter)">
+                        <i class="fas fa-rotate"></i>
+                    </button>
+                    <button id="open-external-btn" class="btn-pug btn-pug-ghost btn-pug-icon" aria-label="Abrir em nova aba" title="Abrir em nova aba">
+                        <i class="fas fa-arrow-up-right-from-square"></i>
+                    </button>
+                    <button id="fullscreen-btn" class="btn-pug btn-pug-ghost btn-pug-icon" aria-label="Tela cheia" title="Tela cheia">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div id="error-banner" role="alert">
+                <div class="title"><i class="fas fa-triangle-exclamation mr-1"></i> Erro de compilação</div>
+                <div id="error-message"></div>
+            </div>
+
+            <div id="iframe-wrapper">
+                <iframe id="preview-frame"
+                        title="Pré-visualização do template Pug"
+                        sandbox="allow-scripts allow-popups allow-forms"></iframe>
+                <div id="outdated-overlay">
+                    <div class="outdated-badge">
+                        <i class="fas fa-triangle-exclamation"></i>
+                        <div>
+                            <strong>Preview desatualizado</strong>
+                            <span>Corrija o erro para atualizar</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="console-panel">
+                <div id="console-header">
+                    <div class="flex items-center">
+                        <i class="fas fa-terminal mr-2" style="font-size: 10px;"></i>
+                        Console
+                        <span id="console-badge">0</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button id="console-clear-btn" class="btn-pug btn-pug-ghost btn-pug-icon" style="width: 22px; height: 22px; padding: 0;" aria-label="Limpar console" title="Limpar console">
+                            <i class="fas fa-xmark" style="font-size: 10px;"></i>
+                        </button>
+                        <i class="fas fa-chevron-up" id="console-chevron" style="font-size: 10px; transition: transform .2s;"></i>
+                    </div>
+                </div>
+                <div id="console-output"></div>
+            </div>
+        </div>
+    </div>
+
+    <!--  FOOTER  -->
+    <footer class="flex items-center justify-between px-3 shrink-0 border-t" style="height: 26px; background: var(--color-base-100); border-color: var(--border-subtle); font-family: var(--pug-font-mono); font-size: 11px; color: color-mix(in oklch, var(--color-base-content) 55%, transparent);">
+        <div class="flex items-center gap-4">
+            <span>Ln <span id="cursor-line">1</span>, Col <span id="cursor-col">1</span></span>
+            <span class="hidden sm:inline" id="active-file-label">index.pug</span>
+            <span class="hidden md:inline">UTF-8</span>
+        </div>
+        <div class="flex items-center gap-4">
+            <span id="compile-time">0.0 ms</span>
+            <span id="save-indicator" aria-live="polite">salvo <i class="fas fa-check"></i></span>
+            <span class="hidden sm:inline">Ctrl+Enter · Ctrl+S · Ctrl+Shift+V</span>
+        </div>
+    </footer>
+
+    <!--  TOAST  -->
+    <div id="toast" role="status" aria-live="polite"></div>
+
+    <!--  MODAL TEMPLATES  -->
+    <dialog id="templates-modal">
+        <div class="modal-content">
+            <header class="modal-header">
+                <h2>Começar de um template</h2>
+                <form method="dialog">
+                    <button class="btn-pug btn-pug-ghost btn-pug-icon" aria-label="Fechar">
+                        <i class="fas fa-xmark"></i>
+                    </button>
+                </form>
+            </header>
+            <div class="template-grid" id="template-grid"></div>
+        </div>
+    </dialog>
+
+    <!--  CRITICAL ERROR  -->
+    <div id="critical-error" role="alert">
+        <h2><i class="fas fa-circle-exclamation"></i> Falha ao inicializar o playground</h2>
+        <p>Um ou mais recursos críticos não puderam ser carregados.</p>
+        <div class="diag" id="critical-diag"></div>
+        <p><strong>Próximos passos:</strong></p>
+        <ul>
+            <li>Desative AdBlock / uBlock / Privacy Badger para esta página</li>
+            <li>Teste em outro navegador ou outra rede</li>
+            <li>Libere os domínios: <code>esm.sh</code>, <code>cdn.jsdelivr.net</code>, <code>unpkg.com</code>, <code>cdn.skypack.dev</code>, <code>bundle.run</code>, <code>cdnjs.cloudflare.com</code></li>
+        </ul>
+        <button onclick="location.reload()" class="btn-pug btn-pug-primary" style="margin-top: 20px;">
+            <i class="fas fa-rotate-right"></i> Tentar novamente
+        </button>
+    </div>
+
+    <!--  INPUT FILE (hidden)  -->
+    <input type="file" id="import-input" accept=".pug,.jade,.css,.js" multiple hidden>
+
+    <script>
+    // CONFIG & CONSTANTES
+    const CONFIG = Object.freeze({
+        DEBOUNCE_MS: 400,
+        SAVE_MS: 400,
+        MIN_PANE_WIDTH: 280,
+        MAX_OUTPUT_BYTES: 5 * 1024 * 1024,
+        STORAGE_KEY: 'pug-playground:state:v2',
+        THEME_KEY: 'pug-playground:theme',
+        FA_CDN: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css',
+    });
+
+    const FILES = ['pug', 'css', 'js'];
+    const FILE_META = {
+        pug: { label: 'index.pug', mode: 'pug', badge: 'fa-dog' },
+        css: { label: 'styles.css', mode: 'css', badge: 'fa-css3-alt' },
+        js: { label: 'script.js', mode: 'javascript', badge: 'fa-js' },
+    };
+
+    // SVG do Pug (multi-cor, do brand original)
+    const PUG_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" aria-hidden="true"><g transform="translate(-.25 -1.71)"><path fill="#ffe0b2" d="M107.4 50.9c-.2-4.4.4-8.3-1.6-11.6-4.8-8.2-16.8-13-40.8-13v.7h-.5.5v-.7c-24 0-36.6 4.8-41.4 13.1-1.9 3.4-1.7 7.2-2 11.6-.2 3.5-1.8 7.2-1.1 11.2.8 5.2 1.1 10.4 1.9 15.2.6 3.9 6 7.2 6.5 10.9 1.4 10.2 12 14.9 36 14.9v.8h-.6.7v-.8c24 0 34.2-4.7 35.5-14.9.5-3.8 5.5-7 6.1-10.9.8-4.8 1.1-10 1.9-15.2.7-4-.9-7.8-1.1-11.3"/><path fill="#ffe0b2" d="M64.6 54.5c4.3.1 7.3 2.8 10.1 5.3 3.3 2.9 8.9 4.9 11.2 7.4s5.3 5 6.4 8.9 1.4 8.9 1.4 10.2.7 1 2.7 0c4.7-2.3 9.9-8.5 9.9-8.5-.6 3.9-5.7 7.4-6.2 11.1C98.9 99.1 89 104 64.5 104h-.1.6"/><path fill="#ffe0b2" d="M80.4 46.7c.9 3.1 4.1 13.6-2.1 10.1 0 0 2.6 1.5 4.2 7.2 1.7 5.7 5.8 6.4 5.8 6.4s6.7 1.3 11.7-3c4.2-3.6 4.9-10 3.1-14.9-1.8-4.8-5-6.3-9.7-7.3-4.7-1.1-14.1-2-13 1.5"/><circle cx="92.3" cy="58.1" r="8.8"/><circle cx="90" cy="54.2" r="2.3" fill="#fafafa"/><path fill="#ffe0b2" d="M78.9 57.7s7.9 5.4 12.2 10.7 4.2 6.3 4.2 6.3l-3.1 1.4s-4.4-8.3-9.8-11.4c-5.5-3.1-6.1-5.7-6.1-5.7zm-14-3.2c-4.3.1-7.5 2.8-10.4 5.3-3.3 2.9-9.1 4.9-11.4 7.4s-5.4 5-6.5 8.9-1.5 8.9-1.5 10.2.2 1.4-2.7 0c-4.7-2.2-9.9-8.5-9.9-8.5.6 3.9 5.7 7.4 6.2 11.1C30.1 99.1 40 104 64.5 104h.5"/><path fill="#4e342e" d="M88.1 71.4C83.3 65.5 75.6 60 64.9 60h-.1c-10.7 0-18.4 5.5-23.2 11.4-5 6.1-4.6 8.5-4.6 14.3 0 21 7.4 15 12.3 17.6 5 2.5 10.2 1.7 15.5 1.7h.1c5.4 0 10.5.7 15.5-1.8 4.9-2.5 12.3 3.7 12.3-17.3.1-5.8.4-8.4-4.6-14.5"/><path fill="#3e2723" d="M64.4 65.2s-.7 9.7-2.1 11.6l2.6-.6z"/><path fill="#3e2723" d="M65.1 65.2s.7 9.7 2.1 11.6l-2.6-.6z"/><path fill="#4e342e" d="M56.7 62.9c-1-2.3 2.6-6 8.3-6.1 5.7 0 9.3 3.7 8.3 6.1S68.7 66 65 66.1c-3.6-.1-7.3-.8-8.3-3.2"/><path d="M65 65.2c0-.4 3.4-.5 5.2-1.7 0 0-3.7 1.2-4.5.7-.8-.4-1-1.6-1-1.6s-.3 1.2-.9 1.6c-.7.4-4.9-.7-4.9-.7s5.6 1.4 5.6 1.7-.1 1.3-.1 2c0 2.5 0 8.7.4 9.2.6.9.4-6.7.4-9.2-.1-.8-.1-1.6-.2-2"/><path fill="#795548" d="M65.2 78.6c1.7 0 4.7 1.2 7.4 3.1-2.6-2.9-5.7-4.9-7.4-4.9-1.8 0-5.6 2.2-8.3 5.4 2.8-2.2 6.4-3.6 8.3-3.6"/><g fill="#3e2723"><path d="M64.5 96.3c-3.8 0-7.5-1.2-10.9-2.1-.7-.2-1.4.3-2.1.1-6.3-2-11.4-5.4-14.5-9.7v1c0 21 7.4 15.1 12.3 17.6 5 2.5 10.2 1.7 15.5 1.7h.1c5.4 0 10.5.7 15.5-1.8 4.9-2.5 12.3 3.6 12.3-17.4 0-.8 0-1.6.1-2.3-2.9 4.7-8.2 8.4-14.8 10.6-.6.2-2-.3-2.6-.2-3.6 1.2-6.8 2.5-10.9 2.5"/><path d="M55 85s-2.5 7.5-.8 10.8l-2.3-1s1.7-7.6 3.1-9.8m19.8 0s2.5 7.5.8 10.8l2.3-1s-1.8-7.6-3.1-9.8"/></g><path fill="#ffe0b2" d="M48.6 46.7c-.9 3.1-4.1 13.6 2.1 10.1 0 0-2.6 1.5-4.2 7.2s-5.8 6.4-5.8 6.4-6.7 1.3-11.7-3c-4.2-3.6-4.9-10-3.1-14.9s5-6.3 9.7-7.3c4.7-1.1 14-2 13 1.5"/><path d="M64.9 76.8c2.7 0 11.1 5.8 11.2 12.9v-.4c0-7.4-6.8-13.3-11.2-13.3s-11.2 6-11.2 13.3v.4c.1-7.1 8.5-12.9 11.2-12.9"/><g fill="#3e2723"><ellipse cx="66.7" cy="61.5" rx=".8" ry="1.5" transform="rotate(-14.465 66.71 61.469)"/><ellipse cx="62.4" cy="61.5" rx=".8" ry="1.5" transform="rotate(17.235 62.372 61.463)"/></g><circle cx="37.2" cy="58.1" r="8.8"/><circle cx="39.5" cy="54.2" r="2.3" fill="#fafafa"/><path fill="#795548" d="M67.5 58.2c0-.1-2.3 1-2.9 1.1-.6-.1-2.9-1.2-2.9-1.1z"/><path fill="#ffe0b2" d="M50 57.7s-7.9 5.4-12.2 10.7-4.2 6.3-4.2 6.3l3.1 1.4s4.4-8.3 9.8-11.4 6.1-5.7 6.1-5.7z"/><path fill="#ffe0b2" d="M32.7 41.7S30 49.1 24 52.2c0 0 9.4-1.1 8.7-10.5m63.1 0s2.7 7.4 8.7 10.5c0 0-9.4-1.1-8.7-10.5M78.7 55.5s-5.9-6.2-13.8-6.4h.2c-8 .2-13.8 6.4-13.8 6.4 6.9-4.8 12.8-4.7 13.8-4.7-.1 0 6.7-.1 13.6 4.7m-6.9-13s-3-4.2-7-4.3h.2c-3 .1-6.9 4.3-6.9 4.3 3.4-3.3 6.9-3.2 6.9-3.2s3.3-.1 6.8 3.2M37.2 73.2s-4.7 2.3-8.1.9H29c-3-1.7-4.5-6.8-4.5-6.8s3 9 12.7 5.9m54.8 0s4.7 2.3 8.1.9c4-1.7 4.6-6.8 4.6-6.8s-3 9-12.7 5.9"/><path fill="#ffe0b2" d="M42.6 41.2c2.6-.5 6.9-.6 10.3.5 4.3 1.5.8 7 1.7 7.3s2.1-3.8 10.1-3.4c8.1.4 9 4 10.1 3.4s-1.1-10 11-7.8c0 0-12.7-3.4-12.1 5.8 0 0-7.3-5.6-17.5-.6.1 0 2.7-8.6-13.6-5.2m44.3 0c.2 0 .3.1.4.1s-.1-.1-.4-.1M39.1 28.9S28.3 42.5 26.7 47.7c-1.6 5.3-2.8 27-4.2 30.1l-5-21.4 9.2-22.3zm50.8 0s10.8 13.6 12.4 18.8c1.6 5.3 2.8 27 4.2 30.1l5-21.4-9.2-22.3z"/><path fill="#4e342e" d="M89.4 28.9s11.6 9.7 15 20.9 2 24.8 4.6 26.5c3.7 2.4 7.9-11.9 9.3-13.4 2.2-2.4 9.5-8.5 10-9.6s-14.8-17.8-21.5-21.1c-8.1-3.8-18.1-4.1-17.4-3.3"/><path fill="#3e2723" d="M99.3 34.9s13.7 17.5 13.5 39.3l5.5-11.2c-.1 0-4.9-14.3-19-28.1"/><path fill="#4e342e" d="M39.1 28.9s-11.6 9.7-15 20.9-2 24.8-4.6 26.5c-3.7 2.4-7.9-11.9-9.3-13.4C8 60.5.7 54.4.2 53.3S15 35.5 21.7 32.2c8.1-3.8 18.1-4.1 17.4-3.3"/><path fill="#3e2723" d="M29.2 34.9S15.5 52.4 15.7 74.2L10.3 63s4.8-14.3 18.9-28.1"/><path fill="#ffe0b2" d="M21.8 74.6s1 5.4 2.6 7.1.5-1.3.5-1.3-1.7-.9-1.4-7.8-1.7 2-1.7 2m85.3 0s-1 5.4-2.6 7.1-.5-1.3-.5-1.3 1.7-.9 1.4-7.8 1.7 2 1.7 2"/><g fill="#3e2723"><circle cx="54.5" cy="70.5" r=".8"/><circle cx="49.9" cy="75.3" r=".8"/><circle cx="48.4" cy="70.5" r=".8"/></g><g fill="#3e2723"><circle cx="74" cy="70.5" r=".8"/><circle cx="78.6" cy="75.3" r=".8"/><circle cx="80.1" cy="70.5" r=".8"/></g></g></svg>`;
+
+    // Templates (para o modal)
+    const TEMPLATES = {
+    landing: {
+        name: 'Landing page',
+        description: 'Site de marketing com hero, features e footer',
+        icon: 'fa-rocket',
+        pug: `-
+  const features = [
+    { title: 'Indentação', desc: 'Sem tags de fechamento. A hierarquia é o próprio código.' },
+    { title: 'Reutilizável', desc: 'Mixins, variáveis e includes para evitar repetição.' },
+    { title: 'Rápido', desc: 'Compila para HTML limpo e leve. Ideal para qualquer stack.' }
+  ]
+
+doctype html
+html(lang="pt-BR")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport" content="width=device-width, initial-scale=1.0")
+    title Meu Site
+  body
+    header.site-header
+      .container
+        a.brand(href="#")
+          span.brand-icon P
+          | PugSite
+        nav.site-nav
+          a(href="#") Início
+          a(href="#") Recursos
+          a(href="#") Contato
+    main
+      section.hero
+        .container
+          span.badge Novo · v1.0
+          h1 Um site simples
+            br
+            span.highlight escrito em Pug.
+          p.lead Pug é uma linguagem de template para HTML que usa indentação e abreviações.
+          .actions
+            a.btn.btn-primary(href="#") Começar agora
+            a.btn.btn-ghost(href="#") Saber mais
+      section.features
+        .container
+          .grid
+            each feat in features
+              .card
+                .card-icon ✓
+                h3= feat.title
+                p= feat.desc
+    footer.site-footer
+      .container
+        p Feito com ❤ em Pug · #{new Date().getFullYear()}`,
+        css: `* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, sans-serif; color: #2a221c; background: #faf6ef; line-height: 1.6; }
+.container { max-width: 900px; margin: 0 auto; padding: 0 24px; }
+.site-header { padding: 20px 0; border-bottom: 1px solid #e8dfd2; }
+.site-header .container { display: flex; align-items: center; justify-content: space-between; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 20px; color: inherit; text-decoration: none; }
+.brand-icon { width: 32px; height: 32px; border-radius: 8px; background: #8b5a3c; color: #fff; display: flex; align-items: center; justify-content: center; }
+.site-nav { display: flex; gap: 24px; font-size: 14px; }
+.site-nav a { color: #6b5a4c; text-decoration: none; }
+.site-nav a:hover { color: #b35a1f; }
+.hero { text-align: center; padding: 80px 0; }
+.badge { display: inline-block; padding: 4px 12px; background: #f3ecdf; color: #8b5a3c; border-radius: 999px; font-size: 12px; font-weight: 600; margin-bottom: 16px; }
+h1 { font-size: 48px; line-height: 1.1; color: #1c1713; }
+.highlight { color: #b35a1f; }
+.lead { font-size: 18px; color: #6b5a4c; max-width: 560px; margin: 20px auto 0; }
+.actions { display: flex; gap: 12px; justify-content: center; margin-top: 32px; flex-wrap: wrap; }
+.btn { padding: 12px 24px; border-radius: 8px; font-weight: 600; text-decoration: none; }
+.btn-primary { background: #b35a1f; color: #fff; }
+.btn-primary:hover { background: #8b4515; }
+.btn-ghost { background: #fff; color: #6b5a4c; border: 1px solid #e8dfd2; }
+.btn-ghost:hover { background: #f3ecdf; }
+.features { padding: 40px 0 80px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; }
+.card { background: #fff; border: 1px solid #e8dfd2; border-radius: 16px; padding: 24px; }
+.card-icon { width: 40px; height: 40px; border-radius: 10px; background: #f3ecdf; color: #b35a1f; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px; margin-bottom: 12px; }
+.card h3 { font-size: 16px; margin-bottom: 6px; }
+.card p { font-size: 14px; color: #6b5a4c; }
+.site-footer { padding: 24px 0; border-top: 1px solid #e8dfd2; text-align: center; font-size: 13px; color: #998878; }`,
+        js: `// Exemplo de interatividade
+document.querySelectorAll('a[href="#"]').forEach(a => {
+  a.addEventListener('click', (e) => {
+    e.preventDefault();
+    console.log('Link clicado:', a.textContent.trim());
+  });
+});`,
+    },
+    brandbook: {
+        name: 'Brand book',
+        description: 'Paleta, tipografia e componentes',
+        icon: 'fa-palette',
+        pug: `-
+  const palette = [
+    { name: 'Terracotta', hex: '#b35a1f' },
+    { name: 'Bege', hex: '#ffe0b2' },
+    { name: 'Marrom', hex: '#4e342e' },
+    { name: 'Creme', hex: '#faf6ef' },
+    { name: 'Âmbar', hex: '#f0a050' }
+  ]
+
+doctype html
+html(lang="pt-BR")
+  head
+    meta(charset="UTF-8")
+    title Brand Book
+  body
+    .container
+      header.brand-header
+        h1 Brand Book
+        p Manual de identidade visual
+      
+      section
+        h2 Cores
+        .palette
+          each color in palette
+            .swatch
+              .swatch-color(style="background:" + color.hex)
+              .swatch-info
+                strong= color.name
+                code= color.hex
+      
+      section
+        h2 Tipografia
+        .type-scale
+          .type-row
+            span.type-label H1
+            span.type-sample(style="font-size:48px;font-weight:700") Heading 1
+          .type-row
+            span.type-label H2
+            span.type-sample(style="font-size:32px;font-weight:600") Heading 2
+          .type-row
+            span.type-label Body
+            span.type-sample(style="font-size:16px") Corpo de texto para leitura.
+          .type-row
+            span.type-label Small
+            span.type-sample(style="font-size:12px") Legendas e notas de rodapé.
+      
+      section
+        h2 Componentes
+        .components
+          button.btn.btn-primary Botão primário
+          button.btn.btn-ghost Botão secundário
+          span.badge Badge exemplo
+          input.input(type="text" placeholder="Campo de input")`,
+        css: `* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, sans-serif; background: #faf6ef; color: #2a221c; }
+.container { max-width: 800px; margin: 0 auto; padding: 48px 24px; }
+.brand-header { border-bottom: 2px solid #b35a1f; padding-bottom: 24px; margin-bottom: 40px; }
+h1 { font-size: 40px; color: #4e342e; }
+.brand-header p { color: #998878; margin-top: 8px; }
+section { margin-bottom: 48px; }
+h2 { color: #4e342e; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 0.05em; font-size: 13px; font-weight: 700; }
+.palette { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+.swatch { background: #fff; border: 1px solid #e8dfd2; border-radius: 12px; overflow: hidden; }
+.swatch-color { height: 80px; }
+.swatch-info { padding: 10px 12px; }
+.swatch-info strong { display: block; font-size: 13px; }
+.swatch-info code { font-size: 11px; color: #998878; }
+.type-row { display: flex; align-items: baseline; gap: 24px; padding: 12px 0; border-bottom: 1px solid #e8dfd2; }
+.type-label { font-size: 11px; color: #998878; font-family: monospace; min-width: 40px; }
+.components { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.btn { padding: 10px 20px; border-radius: 8px; font-weight: 600; border: 0; cursor: pointer; font-family: inherit; }
+.btn-primary { background: #b35a1f; color: #fff; }
+.btn-ghost { background: #fff; color: #6b5a4c; border: 1px solid #e8dfd2; }
+.badge { padding: 4px 10px; background: #f3ecdf; color: #8b5a3c; border-radius: 999px; font-size: 12px; font-weight: 600; }
+.input { padding: 10px 14px; border: 1px solid #e8dfd2; border-radius: 8px; font-family: inherit; font-size: 14px; }`,
+        js: ``,
+    },
+    blog: {
+        name: 'Blog post',
+        description: 'Artigo com header, conteúdo e autor',
+        icon: 'fa-newspaper',
+        pug: `doctype html
+html(lang="pt-BR")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport" content="width=device-width, initial-scale=1.0")
+    title Artigo — Blog
+  body
+    article.post
+      header.post-header
+        span.post-category Tecnologia
+        h1 Como começar com Pug
+        p.post-subtitle Um guia rápido para a linguagem de templates que simplifica seu HTML.
+        .post-meta
+          .author
+            .avatar AC
+            div
+              strong Ana Costa
+              time 18 de outubro de 2026 · 5 min de leitura
+      
+      .post-body
+        p Pug é uma linguagem de template para HTML que usa indentação para definir hierarquia. Em vez de escrever tags de fechamento, você aninha elementos.
+        
+        h2 Por que usar Pug?
+        
+        ul
+          li Menos digitação — sem tags de fechamento
+          li Código mais limpo e legível
+          li Suporte a mixins, variáveis e includes
+          li Compila para HTML puro
+        
+        h2 Exemplo básico
+        
+        pre
+          code.
+            div.container
+              h1 Olá, mundo
+              p Este é um parágrafo.
+        
+        p O código acima gera um &lt;div&gt; com a classe "container", contendo um título e um parágrafo.
+        
+        blockquote
+          | "Pug torna o HTML legível de novo."
+        
+        p Se você trabalha com mockups gerados por IA, o Pug é especialmente útil: o código vem estruturado e é fácil de ajustar.
+    
+    footer.post-footer
+      p Publicado em 2026 · Blog Exemplo`,
+        css: `* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: Georgia, 'Times New Roman', serif; background: #faf6ef; color: #2a221c; line-height: 1.7; }
+.post { max-width: 680px; margin: 0 auto; padding: 60px 24px; }
+.post-header { margin-bottom: 40px; }
+.post-category { display: inline-block; font-family: system-ui, sans-serif; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #b35a1f; margin-bottom: 12px; }
+h1 { font-size: 42px; line-height: 1.15; color: #1c1713; margin-bottom: 12px; }
+.post-subtitle { font-size: 20px; color: #6b5a4c; margin-bottom: 24px; font-style: italic; }
+.post-meta { display: flex; align-items: center; gap: 12px; font-family: system-ui, sans-serif; font-size: 13px; color: #998878; }
+.avatar { width: 40px; height: 40px; border-radius: 50%; background: #b35a1f; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; }
+.post-meta strong { display: block; color: #2a221c; font-size: 14px; }
+.post-body { font-size: 18px; }
+.post-body p { margin-bottom: 20px; }
+h2 { font-family: system-ui, sans-serif; font-size: 26px; margin: 40px 0 16px; color: #1c1713; }
+ul, ol { margin: 0 0 20px 28px; }
+li { margin-bottom: 8px; }
+pre { background: #1c1713; color: #f5e8d5; padding: 20px; border-radius: 10px; overflow-x: auto; margin: 20px 0; font-size: 14px; }
+code { font-family: 'JetBrains Mono', Consolas, monospace; }
+p code { background: #f3ecdf; padding: 2px 6px; border-radius: 4px; font-size: 16px; }
+blockquote { border-left: 3px solid #b35a1f; padding-left: 20px; font-style: italic; font-size: 22px; color: #6b5a4c; margin: 30px 0; }
+.post-footer { max-width: 680px; margin: 40px auto; padding: 24px; border-top: 1px solid #e8dfd2; font-size: 13px; color: #998878; text-align: center; font-family: system-ui, sans-serif; }`,
+        js: ``,
+    },
+    blank: {
+        name: 'Em branco',
+        description: 'Comece do zero com as três abas vazias',
+        icon: 'fa-file',
+        pug: `doctype html
+html(lang="pt-BR")
+  head
+    meta(charset="UTF-8")
+    title Nova página
+  body
+    h1 Olá, Pug!`,
+        css: `body {
+  font-family: system-ui, sans-serif;
+  padding: 40px;
+}`,
+        js: `console.log('Pronto!');`,
+    },
+};
+
+    // HELPERS
+    function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c])); }
+
+    const storage = {
+        get(key, fallback = null) {
+            try { const v = localStorage.getItem(key); return v === null ? fallback : v; }
+            catch { return fallback; }
+        },
+        set(key, value) {
+            try { localStorage.setItem(key, value); return true; }
+            catch { return false; }
+        },
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    function toast(msg) {
+        const el = $('toast');
+        el.textContent = msg;
+        el.classList.add('show');
+        clearTimeout(toast._t);
+        toast._t = setTimeout(() => el.classList.remove('show'), 2500);
+    }
+
+    // COMPILE
+    function buildFullDoc(bodyHtml, css, js) {
+        return `<!DOCTYPE html>
+<html lang="pt-BR"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="${CONFIG.FA_CDN}">
+<style>body{margin:0;padding:0;}</style>
+<style>${css || ''}</style>
+</head><body>
+${CONSOLE_CAPTURE_SCRIPT}
+${bodyHtml}
+<script>${js || ''}<\/script>
+</body></html>`;
+    }
+
+    function injectAssets(html, css, js) {
+        let out = html;
+        if (css) {
+            const styleTag = `<style>${css}</style>`;
+            if (/<\/head>/i.test(out)) out = out.replace(/<\/head>/i, styleTag + '</head>');
+            else out = styleTag + out;
+        }
+        if (js) {
+            const scriptTag = `<script>${js}<\/script>`;
+            if (/<\/body>/i.test(out)) out = out.replace(/<\/body>/i, scriptTag + '</body>');
+            else out = out + scriptTag;
+        }
+        if (/<\/head>/i.test(out)) out = out.replace(/<\/head>/i, CONSOLE_CAPTURE_SCRIPT + '</head>');
+        else out = CONSOLE_CAPTURE_SCRIPT + out;
+        return out;
+    }
+
+    const CONSOLE_CAPTURE_SCRIPT = `<script>
+(function(){
+  function send(type, args){
+    try {
+      var payload = Array.prototype.map.call(args, function(a){
+        try { return typeof a === 'object' ? JSON.stringify(a) : String(a); } catch(e){ return String(a); }
+      });
+      parent.postMessage({ __pg: true, type: type, args: payload }, '*');
+    } catch(e){}
+  }
+  var oe = window.onerror;
+  window.onerror = function(msg, src, line, col, err){
+    send('error', [msg + (line ? ' (linha ' + line + ':' + col + ')' : '')]);
+    if (oe) return oe.apply(this, arguments);
+  };
+  var our = window.onunhandledrejection;
+  window.onunhandledrejection = function(e){
+    send('error', ['Unhandled promise: ' + (e.reason && e.reason.message || e.reason)]);
+    if (our) return our.apply(this, arguments);
+  };
+  var olog = console.log, owarn = console.warn, oerr = console.error, oinfo = console.info;
+  console.log = function(){ send('log', arguments); return olog.apply(console, arguments); };
+  console.warn = function(){ send('warn', arguments); return owarn.apply(console, arguments); };
+  console.error = function(){ send('error', arguments); return oerr.apply(console, arguments); };
+  console.info = function(){ send('info', arguments); return oinfo.apply(console, arguments); };
+})();
+<\/script>`;
+
+    function compileAll(source) {
+        const started = performance.now();
+        const isEmpty = !source.pug.trim() && !source.css.trim() && !source.js.trim();
+        if (isEmpty) return { ok: false, reason: 'empty', elapsed: performance.now() - started };
+
+        let html;
+        try {
+            html = window.pug.render(source.pug);
+        } catch (error) {
+            return { ok: false, reason: 'pug', error, elapsed: performance.now() - started };
+        }
+
+        const isFullDoc = /^\s*<!doctype\s+html/i.test(html) || /<html[\s>]/i.test(html);
+        const finalHtml = isFullDoc ? injectAssets(html, source.css, source.js) : buildFullDoc(html, source.css, source.js);
+
+        if (finalHtml.length > CONFIG.MAX_OUTPUT_BYTES) {
+            return {
+                ok: false, reason: 'pug',
+                error: new Error(`Saída excede ${CONFIG.MAX_OUTPUT_BYTES / 1024 / 1024}MB — simplifique o template.`),
+                elapsed: performance.now() - started,
+            };
+        }
+
+        return { ok: true, html: finalHtml, elapsed: performance.now() - started };
+    }
+
+    // BOOT
+    async function boot() {
+        const pugResult = await (window.__pugReady || Promise.resolve({ ok: false, errors: [] }));
+        if (!pugResult.ok) return showCritical(pugResult.errors);
+        if (typeof CodeMirror === 'undefined') return showCritical([{ url: 'CodeMirror', reason: 'não carregou do CDN' }]);
+
+        // Elementos
+        const iframe = $('preview-frame');
+        const iframeWrapper = $('iframe-wrapper');
+        const editorHost = $('editor-host');
+        const runBtn = $('run-btn');
+        const clearBtn = $('clear-btn');
+        const refreshBtn = $('refresh-btn');
+        const openExtBtn = $('open-external-btn');
+        const fullscreenBtn = $('fullscreen-btn');
+        const importBtn = $('import-btn');
+        const importInput = $('import-input');
+        const shareBtn = $('share-btn');
+        const themeBtn = $('theme-btn');
+        const themeIcon = $('theme-icon');
+        const templatesBtn = $('templates-btn');
+        const templatesModal = $('templates-modal');
+        const templateGrid = $('template-grid');
+        const statusText = $('status-text');
+        const statusDot = $('status-dot');
+        const compileTime = $('compile-time');
+        const cursorLine = $('cursor-line');
+        const cursorCol = $('cursor-col');
+        const activeFileLabel = $('active-file-label');
+        const errorBanner = $('error-banner');
+        const errorMessage = $('error-message');
+        const outdatedOverlay = $('outdated-overlay');
+        const saveIndicator = $('save-indicator');
+        const consoleOutput = $('console-output');
+        const consolePanel = $('console-panel');
+        const consoleHeader = $('console-header');
+        const consoleBadge = $('console-badge');
+        const consoleClearBtn = $('console-clear-btn');
+        const consoleChevron = $('console-chevron');
+
+        // Marca
+        $('brand-logo').innerHTML = PUG_SVG;
+        document.querySelectorAll('[data-file-icon]').forEach(el => {
+            const file = el.parentElement.dataset.file;
+            if (file === 'pug') el.innerHTML = PUG_SVG;
+            else el.innerHTML = `<i class="fas ${file === 'css' ? 'fa-css3-alt' : 'fa-js'}" style="color: ${file === 'css' ? '#2965f1' : '#f7df1e'}"></i>`;
+        });
+
+        // Estado
+        let state = {
+            pug: TEMPLATES.landing.pug,
+            css: TEMPLATES.landing.css,
+            js: TEMPLATES.landing.js,
+        };
+        let activeFile = 'pug';
+        let lastGoodHTML = '';
+        let lastErrorLine = null;
+        let lastSavedValue = '';
+        let persistedOk = true;
+        let refreshRaf = 0;
+        let debounce, saveDebounce;
+        let consoleCount = 0;
+        let currentTheme = storage.get(CONFIG.THEME_KEY) || 'dark';
+
+        // 1) Carrega do hash (#code=...)
+        const hash = location.hash.slice(1);
+        if (hash.startsWith('code=')) {
+            const decoded = decodeState(hash.slice(5));
+            if (decoded) {
+                state = { ...state, ...decoded };
+                history.replaceState(null, '', location.pathname + location.search);
+                setTimeout(() => toast('Código carregado do link compartilhado'), 600);
+            }
+        } else {
+            // 2) Carrega do localStorage
+            const saved = storage.get(CONFIG.STORAGE_KEY);
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    if (parsed && typeof parsed === 'object') {
+                        state = {
+                            pug: parsed.pug ?? state.pug,
+                            css: parsed.css ?? state.css,
+                            js: parsed.js ?? state.js,
+                        };
+                    } else if (typeof parsed === 'string') {
+                        state.pug = parsed;  // legado
+                    }
+                } catch { /* ignora */ }
+            }
+        }
+
+        // Aplica tema
+        function applyTheme(theme) {
+            currentTheme = theme;
+            document.documentElement.dataset.theme = theme;
+            themeIcon.className = theme === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
+            storage.set(CONFIG.THEME_KEY, theme);
+        }
+        applyTheme(currentTheme);
+
+        // CodeMirror docs (um por arquivo)
+        const docs = {
+            pug: CodeMirror.Doc(state.pug, FILE_META.pug.mode),
+            css: CodeMirror.Doc(state.css, FILE_META.css.mode),
+            js: CodeMirror.Doc(state.js, FILE_META.js.mode),
+        };
+
+        // Editor
+        const editor = CodeMirror(editorHost, {
+            value: '',
+            mode: 'pug',
+            theme: 'pug',
+            lineNumbers: true,
+            indentUnit: 2,
+            tabSize: 2,
+            lineWrapping: true,
+            matchBrackets: true,
+            autoCloseBrackets: true,
+            extraKeys: {
+                'Ctrl-Enter': () => { renderAll(); return false; },
+                'Cmd-Enter': () => { renderAll(); return false; },
+                'Ctrl-S': () => { downloadHTML(); return false; },
+                'Cmd-S': () => { downloadHTML(); return false; },
+                'Ctrl-Shift-V': () => { pasteAndRender(); return false; },
+                'Cmd-Shift-V': () => { pasteAndRender(); return false; },
+                'Ctrl-Space': 'autocomplete',
+            },
+        });
+        editor.swapDoc(docs[activeFile]);
+        lastSavedValue = serializeState();
+
+
+        // TABS
+
+        document.querySelectorAll('.file-tab').forEach(tab => {
+            tab.addEventListener('click', () => switchTab(tab.dataset.file));
+        });
+
+        function switchTab(file) {
+            if (file === activeFile) return;
+            activeFile = file;
+            editor.swapDoc(docs[file]);
+            document.querySelectorAll('.file-tab').forEach(t => t.classList.toggle('active', t.dataset.file === file));
+            activeFileLabel.textContent = FILE_META[file].label;
+            updateCursor();
+            editor.focus();
+        }
+
+        function currentSource() {
+            return { pug: docs.pug.getValue(), css: docs.css.getValue(), js: docs.js.getValue() };
+        }
+
+        function updateCursor() {
+            const p = editor.getCursor();
+            cursorLine.textContent = p.line + 1;
+            cursorCol.textContent = p.ch + 1;
+        }
+
+        editor.on('cursorActivity', updateCursor);
+
+
+        // STATUS / ERROS
+
+        const STATUS = {
+            idle: { color: 'var(--color-success)', text: 'Vazio' },
+            pending: { color: 'var(--color-warning)', text: 'Digitando…' },
+            success: { color: 'var(--color-success)', text: 'Compilado' },
+            error: { color: 'var(--color-error)', text: 'Erro' },
+        };
+        function setStatus(kind, custom) {
+            const cfg = STATUS[kind] || STATUS.idle;
+            statusText.textContent = custom || cfg.text;
+            statusDot.style.background = cfg.color;
+            statusDot.style.animation = kind === 'pending' ? 'pulse 1.2s ease-in-out infinite' : '';
+        }
+
+        function clearErrorHighlight() {
+            if (lastErrorLine !== null) {
+                editor.removeLineClass(lastErrorLine, 'background', 'cm-error-line');
+                lastErrorLine = null;
+            }
+        }
+        function showErrorBanner(err) {
+            errorBanner.classList.add('visible');
+            errorMessage.textContent = err.message || String(err);
+            const m = String(err.message || '').match(/(\d+):\d+/);
+            if (m) {
+                const line = parseInt(m[1], 10) - 1;
+                if (line >= 0 && line < editor.lineCount()) {
+                    editor.addLineClass(line, 'background', 'cm-error-line');
+                    editor.scrollIntoView({ line, ch: 0 }, 80);
+                    lastErrorLine = line;
+                }
+            }
+        }
+        function hideErrorBanner() {
+            errorBanner.classList.remove('visible');
+            errorMessage.textContent = '';
+            clearErrorHighlight();
+        }
+
+
+        // RENDER
+
+        function renderAll(opts = {}) {
+            clearConsole();
+            const source = currentSource();
+            const result = compileAll(source);
+            compileTime.textContent = result.elapsed.toFixed(1) + ' ms';
+
+            if (result.reason === 'empty') {
+                iframe.srcdoc = emptyStateDoc();
+                hideErrorBanner();
+                outdatedOverlay.classList.remove('visible');
+                setStatus('idle');
+                return;
+            }
+
+            if (result.ok) {
+                lastGoodHTML = result.html;
+                iframe.srcdoc = result.html;
+                hideErrorBanner();
+                outdatedOverlay.classList.remove('visible');
+                setStatus('success');
+            } else {
+                if (lastGoodHTML) outdatedOverlay.classList.add('visible');
+                else iframe.srcdoc = errorStateDoc();
+                showErrorBanner(result.error);
+                setStatus('error');
+            }
+        }
+
+        const emptyStateDoc = () => `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{margin:0;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;background:#faf6ef;color:#998878}</style></head><body><div style="text-align:center"><div style="font-size:32px;margin-bottom:12px">✏️</div><p style="font-size:14px">Comece a digitar Pug ou clique em <strong>Templates</strong>.</p></div></body></html>`;
+        const errorStateDoc = () => `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{margin:0;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;background:#faf6ef;color:#998878}</style></head><body><div style="text-align:center"><div style="font-size:32px;margin-bottom:12px">⚠️</div><p style="font-size:14px">Corrija o erro acima para ver o resultado.</p></div></body></html>`;
+
+
+        // AUTOSAVE
+
+        function serializeState() {
+            return JSON.stringify(currentSource());
+        }
+
+        function scheduleSave() {
+            saveIndicator.innerHTML = 'salvando…';
+            saveIndicator.style.opacity = '.5';
+            clearTimeout(saveDebounce);
+            saveDebounce = setTimeout(() => {
+                const value = serializeState();
+                persistedOk = storage.set(CONFIG.STORAGE_KEY, value);
+                if (persistedOk) lastSavedValue = value;
+                saveIndicator.innerHTML = persistedOk ? 'salvo <i class="fas fa-check"></i>' : 'salvar: off';
+                saveIndicator.style.opacity = '';
+            }, CONFIG.SAVE_MS);
+        }
+
+        editor.on('change', () => {
+            setStatus('pending');
+            clearTimeout(debounce);
+            debounce = setTimeout(() => renderAll(), CONFIG.DEBOUNCE_MS);
+            scheduleSave();
+        });
+
+
+        // CONSOLE
+
+        function clearConsole() {
+            consoleOutput.innerHTML = '';
+            consoleCount = 0;
+            consoleBadge.classList.remove('visible');
+            consoleBadge.textContent = '0';
+        }
+
+        function appendConsole(type, args) {
+            const line = document.createElement('div');
+            line.className = 'console-line console-' + type;
+            const time = new Date().toLocaleTimeString('pt-BR', { hour12: false });
+            line.innerHTML = `<span class="console-time">${time}</span><span class="console-msg">${esc(args.join(' '))}</span>`;
+            consoleOutput.appendChild(line);
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+            if (type === 'error' || type === 'warn') {
+                consoleCount++;
+                consoleBadge.textContent = String(consoleCount);
+                consoleBadge.classList.add('visible');
+                if (consolePanel.classList.contains('collapsed')) {
+                    consolePanel.classList.remove('collapsed');
+                    consoleChevron.style.transform = '';
+                }
+            }
+        }
+
+        // Listener de mensagens do iframe
+        window.addEventListener('message', (e) => {
+            if (!e.data || e.data.__pg !== true) return;
+            appendConsole(e.data.type, e.data.args || []);
+        });
+
+        consoleHeader.addEventListener('click', (e) => {
+            if (e.target.closest('#console-clear-btn')) return;
+            consolePanel.classList.toggle('collapsed');
+            consoleChevron.style.transform = consolePanel.classList.contains('collapsed') ? 'rotate(180deg)' : '';
+        });
+        consoleClearBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            clearConsole();
+        });
+
+
+        // DOWNLOAD
+
+        function downloadHTML() {
+            if (!lastGoodHTML) { toast('Nada para baixar — compile primeiro'); return; }
+            const blob = new Blob([lastGoodHTML], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = 'output.html';
+            a.click(); URL.revokeObjectURL(url);
+            toast('HTML baixado');
+        }
+
+
+        // OPEN EXTERNAL
+
+        function openExternal() {
+            if (!lastGoodHTML) { toast('Nada para abrir — compile primeiro'); return; }
+            const blob = new Blob([lastGoodHTML], { type: 'text/html' });
+            window.open(URL.createObjectURL(blob), '_blank');
+        }
+
+
+        // IMPORT
+
+        function importFiles(files) {
+            if (!files || !files.length) return;
+            let imported = 0;
+            const pending = Array.from(files);
+            pending.forEach(file => {
+                const ext = (file.name.split('.').pop() || '').toLowerCase();
+                const target = (ext === 'pug' || ext === 'jade') ? 'pug' : (ext === 'css') ? 'css' : (ext === 'js') ? 'js' : null;
+                if (!target) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    docs[target].setValue(e.target.result);
+                    imported++;
+                    if (imported === pending.length) {
+                        switchTab(target);
+                        renderAll();
+                        toast(imported === 1 ? 'Arquivo importado' : `${imported} arquivos importados`);
+                    }
+                };
+                reader.readAsText(file);
+            });
+        }
+
+        importBtn.addEventListener('click', () => importInput.click());
+        importInput.addEventListener('change', (e) => {
+            importFiles(e.target.files);
+            importInput.value = '';
+        });
+
+        // Drag-and-drop
+        editorHost.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            editorHost.classList.add('dragging');
+        });
+        editorHost.addEventListener('dragleave', () => editorHost.classList.remove('dragging'));
+        editorHost.addEventListener('drop', (e) => {
+            e.preventDefault();
+            editorHost.classList.remove('dragging');
+            if (e.dataTransfer.files.length) importFiles(e.dataTransfer.files);
+        });
+
+
+        // PASTE & RENDER (Ctrl+Shift+V)
+
+        async function pasteAndRender() {
+            try {
+                const text = await navigator.clipboard.readText();
+                if (!text) { toast('Clipboard vazio'); return; }
+                docs[activeFile].setValue(text);
+                renderAll();
+                toast(`Colado em ${FILE_META[activeFile].label}`);
+            } catch (err) {
+                toast('Não foi possível ler o clipboard');
+            }
+        }
+
+        // SHARE (URL #code=)
+
+        function encodeState(s) {
+            const json = JSON.stringify({ p: s.pug, c: s.css, j: s.js });
+            if (typeof LZString !== 'undefined') return LZString.compressToEncodedURIComponent(json);
+            return btoa(unescape(encodeURIComponent(json)));
+        }
+        function decodeState(str) {
+            try {
+                let json;
+                if (typeof LZString !== 'undefined') json = LZString.decompressFromEncodedURIComponent(str);
+                if (!json) json = decodeURIComponent(escape(atob(str)));
+                if (!json) return null;
+                const obj = JSON.parse(json);
+                return { pug: obj.p || '', css: obj.c || '', js: obj.j || '' };
+            } catch { return null; }
+        }
+
+        shareBtn.addEventListener('click', async () => {
+            const encoded = encodeState(currentSource());
+            const url = location.origin + location.pathname + '#code=' + encoded;
+            try {
+                await navigator.clipboard.writeText(url);
+                toast('Link copiado! Cole no navegador para abrir.');
+            } catch {
+                prompt('Copie o link:', url);
+            }
+        });
+
+
+        // TEMPLATES
+
+        Object.entries(TEMPLATES).forEach(([key, tpl]) => {
+            const card = document.createElement('button');
+            card.className = 'template-card';
+            card.innerHTML = `<i class="fas ${tpl.icon}"></i><strong>${esc(tpl.name)}</strong><span>${esc(tpl.description)}</span>`;
+            card.addEventListener('click', () => {
+                docs.pug.setValue(tpl.pug);
+                docs.css.setValue(tpl.css);
+                docs.js.setValue(tpl.js);
+                templatesModal.close();
+                switchTab('pug');
+                renderAll();
+                toast(`Template "${tpl.name}" carregado`);
+            });
+            templateGrid.appendChild(card);
+        });
+
+        templatesBtn.addEventListener('click', () => templatesModal.showModal());
+
+
+        // THEME
+
+        themeBtn.addEventListener('click', () => {
+            applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
+        });
+
+
+        // DEVICES
+
+        document.querySelectorAll('.device-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const w = parseInt(btn.dataset.width, 10);
+                if (w > 0) {
+                    iframe.style.width = w + 'px';
+                    iframe.style.maxWidth = '100%';
+                } else {
+                    iframe.style.width = '100%';
+                    iframe.style.maxWidth = '100%';
+                }
+            });
+        });
+
+
+        // ACTIONS
+
+        runBtn.addEventListener('click', () => renderAll());
+        refreshBtn.addEventListener('click', () => renderAll());
+        openExtBtn.addEventListener('click', openExternal);
+
+        clearBtn.addEventListener('click', () => {
+            const hasContent = docs[activeFile].getValue().trim().length > 0;
+            if (hasContent && !confirm(`Limpar ${FILE_META[activeFile].label}?`)) return;
+            docs[activeFile].setValue('');
+            renderAll();
+        });
+
+        fullscreenBtn.addEventListener('click', () => {
+            const pane = $('preview-pane');
+            if (!document.fullscreenElement) pane.requestFullscreen?.();
+            else document.exitFullscreen?.();
+        });
+        document.addEventListener('fullscreenchange', () => {
+            const active = !!document.fullscreenElement;
+            fullscreenBtn.innerHTML = `<i class="fas ${active ? 'fa-compress' : 'fa-expand'}"></i>`;
+            fullscreenBtn.setAttribute('aria-label', active ? 'Sair da tela cheia' : 'Tela cheia');
+        });
+
+
+        // RESIZER
+
+        const resizer = $('resizer');
+        const editorPane = $('editor-pane');
+        const mainArea = $('main-area');
+        let dragging = false;
+
+        function scheduleRefresh() {
+            if (refreshRaf) return;
+            refreshRaf = requestAnimationFrame(() => {
+                refreshRaf = 0;
+                editor.refresh();
+            });
+        }
+
+        function onDragMove(e) {
+            if (!dragging) return;
+            const rect = mainArea.getBoundingClientRect();
+            const maxW = rect.width - CONFIG.MIN_PANE_WIDTH - resizer.offsetWidth;
+            const w = Math.max(CONFIG.MIN_PANE_WIDTH, Math.min(maxW, e.clientX - rect.left));
+            editorPane.style.width = w + 'px';
+            scheduleRefresh();
+        }
+        function onDragEnd() {
+            if (!dragging) return;
+            dragging = false;
+            resizer.classList.remove('active');
+            document.body.style.cursor = '';
+            iframe.style.pointerEvents = '';
+            document.removeEventListener('mousemove', onDragMove);
+            document.removeEventListener('mouseup', onDragEnd);
+        }
+        resizer.addEventListener('mousedown', (e) => {
+            dragging = true;
+            resizer.classList.add('active');
+            document.body.style.cursor = 'col-resize';
+            iframe.style.pointerEvents = 'none';
+            document.addEventListener('mousemove', onDragMove);
+            document.addEventListener('mouseup', onDragEnd);
+            e.preventDefault();
+        });
+        resizer.addEventListener('dblclick', () => {
+            editorPane.style.width = '50%';
+            scheduleRefresh();
+        });
+
+
+        // BEFORE UNLOAD
+
+        window.addEventListener('beforeunload', (e) => {
+            const dirty = serializeState() !== lastSavedValue;
+            if (!persistedOk || dirty) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+
+
+        // START
+
+        updateCursor();
+        renderAll();
+    }
+
+    function showCritical(errors) {
+        $('critical-diag').textContent = (errors || [])
+            .map((e, i) => `${i + 1}. ${e.url}\n   ↳ ${e.reason}`)
+            .join('\n\n') || 'Erro desconhecido.';
+        $('critical-error').classList.add('visible');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        boot().catch(err => showCritical([{ url: 'boot', reason: err.message || String(err) }]));
+    });
+    </script>
+
+    <style>
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+    </style>
+</body>
+</html>
