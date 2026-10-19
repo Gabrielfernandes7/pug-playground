@@ -182,12 +182,13 @@ PUG.boot = async function() {
         pending: { color: 'var(--color-warning)', text: 'Digitando…' },
         success: { color: 'var(--color-success)', text: 'Compilado' },
         error:   { color: 'var(--color-error)',   text: 'Erro' },
+        loading: { color: 'var(--color-warning)', text: 'Inicializando…' },
     };
     function setStatus(kind, custom) {
         const cfg = STATUS[kind] || STATUS.idle;
         statusText.textContent = custom || cfg.text;
         statusDot.style.background = cfg.color;
-        statusDot.style.animation = kind === 'pending' ? 'pulse 1.2s ease-in-out infinite' : '';
+        statusDot.style.animation = (kind === 'pending' || kind === 'loading') ? 'status-pulse 1.2s ease-in-out infinite' : '';
     }
     function clearErrorHighlight() {
         if (lastErrorLine !== null) {

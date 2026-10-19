@@ -276,3 +276,12 @@
 [data-theme="light"] .preview-nav-btn {
     color: var(--text-secondary, color-mix(in oklch, var(--color-base-content) 70%, transparent));
 }
+
+/* Status indicator animation */
+@keyframes status-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+#status-dot {
+    animation: status-pulse 1.2s ease-in-out infinite;
+}
