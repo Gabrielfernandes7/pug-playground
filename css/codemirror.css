@@ -1,0 +1,46 @@
+.cm-s-pug.CodeMirror {
+    height: 100%;
+    font-size: 13px;
+    font-family: var(--pug-font-mono);
+    background: var(--cm-bg);
+    color: var(--cm-fg);
+}
+.cm-s-pug .CodeMirror-gutters {
+    background: var(--cm-gutter-bg);
+    border-right: 1px solid var(--cm-border);
+}
+.cm-s-pug .CodeMirror-linenumber { color: var(--cm-line-num); }
+.cm-s-pug .CodeMirror-cursor { border-left: 2px solid var(--cm-cursor); }
+.cm-s-pug .CodeMirror-selected { background: var(--cm-selection); }
+.cm-s-pug .CodeMirror-activeline-background { background: var(--cm-active-line); }
+.cm-s-pug .cm-keyword { color: var(--cm-keyword); font-weight: 600; }
+.cm-s-pug .cm-def { color: var(--cm-def); }
+.cm-s-pug .cm-variable,
+.cm-s-pug .cm-variable-2,
+.cm-s-pug .cm-variable-3 { color: var(--cm-variable); }
+.cm-s-pug .cm-string,
+.cm-s-pug .cm-string-2 { color: var(--cm-string); }
+.cm-s-pug .cm-number { color: var(--cm-number); }
+.cm-s-pug .cm-comment { color: var(--cm-comment); font-style: italic; }
+.cm-s-pug .cm-tag { color: var(--cm-tag); }
+.cm-s-pug .cm-atom { color: var(--cm-atom); }
+.cm-s-pug .cm-bracket { color: var(--cm-bracket); }
+.cm-s-pug .cm-operator { color: var(--cm-operator); }
+.cm-s-pug .cm-punctuation { color: var(--cm-punctuation); }
+.cm-s-pug .cm-property { color: var(--cm-def); }
+.cm-s-pug .cm-builtin { color: var(--cm-keyword); }
+.cm-s-pug .cm-qualifier { color: var(--cm-def); }
+.cm-s-pug .cm-error { color: #e85858; }
+
+.CodeMirror-hints {
+    background: var(--color-base-100);
+    border: 1px solid var(--border-medium);
+    border-radius: var(--pug-radius-sm);
+    box-shadow: 0 8px 24px rgba(0,0,0,.3);
+    font-family: var(--pug-font-mono);
+    font-size: 12px;
+}
+.CodeMirror-hint { color: var(--color-base-content); padding: 4px 10px; }
+.CodeMirror-hint-active { background: var(--color-primary); color: var(--color-primary-content); }
+
+.cm-error-line { background: rgba(239,68,68,.20) !important; }

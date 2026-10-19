@@ -1,0 +1,91 @@
+:root {
+    --pug-radius-sm: 8px;
+    --pug-radius-md: 12px;
+    --pug-radius-lg: 16px;
+    --pug-font-serif: ui-serif, 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+    --pug-font-mono: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+}
+
+[data-theme="dark"] {
+    --color-base-100: oklch(24% 0.018 55);
+    --color-base-200: oklch(20% 0.016 55);
+    --color-base-300: oklch(15% 0.014 55);
+    --color-base-content: oklch(94% 0.015 80);
+    --color-primary: oklch(72% 0.14 60);
+    --color-primary-content: oklch(18% 0.03 60);
+    --color-secondary: oklch(62% 0.13 35);
+    --color-accent: oklch(85% 0.06 80);
+    --color-neutral: oklch(30% 0.02 55);
+    --color-success: oklch(72% 0.14 145);
+    --color-warning: oklch(80% 0.14 85);
+    --color-error: oklch(65% 0.20 25);
+    --color-info: oklch(70% 0.12 230);
+
+    --cm-bg: #1c1713;
+    --cm-fg: #f5e8d5;
+    --cm-gutter-bg: #1c1713;
+    --cm-border: rgba(255,255,255,.05);
+    --cm-line-num: #6b5a4c;
+    --cm-cursor: #f0a050;
+    --cm-selection: rgba(240,160,80,.22);
+    --cm-active-line: rgba(255,255,255,.025);
+    --cm-keyword: #f0a050;
+    --cm-def: #ffd9a0;
+    --cm-variable: #f5e8d5;
+    --cm-string: #a8c97a;
+    --cm-number: #e8905a;
+    --cm-comment: #7d6d5f;
+    --cm-tag: #e8845a;
+    --cm-atom: #d4a574;
+    --cm-bracket: #d4b48c;
+    --cm-operator: #e8905a;
+    --cm-punctuation: #d4b48c;
+
+    --surface-1: rgba(255,255,255,.03);
+    --surface-2: rgba(255,255,255,.06);
+    --border-subtle: rgba(255,255,255,.07);
+    --border-medium: rgba(255,255,255,.12);
+}
+
+[data-theme="light"] {
+    --color-base-100: oklch(98% 0.008 80);
+    --color-base-200: oklch(95% 0.012 80);
+    --color-base-300: oklch(91% 0.016 80);
+    --color-base-content: oklch(22% 0.03 55);
+    --color-primary: oklch(55% 0.13 50);
+    --color-primary-content: oklch(98% 0.008 80);
+    --color-secondary: oklch(58% 0.11 30);
+    --color-accent: oklch(72% 0.08 80);
+    --color-neutral: oklch(72% 0.02 80);
+    --color-success: oklch(55% 0.14 145);
+    --color-warning: oklch(72% 0.14 80);
+    --color-error: oklch(55% 0.20 25);
+    --color-info: oklch(58% 0.12 230);
+
+    --cm-bg: #faf6ef;
+    --cm-fg: #2a221c;
+    --cm-gutter-bg: #f3ecdf;
+    --cm-border: rgba(0,0,0,.07);
+    --cm-line-num: #a89886;
+    --cm-cursor: #8b5a3c;
+    --cm-selection: rgba(139,90,60,.18);
+    --cm-active-line: rgba(0,0,0,.025);
+    --cm-keyword: #b35a1f;
+    --cm-def: #6b3a1c;
+    --cm-variable: #2a221c;
+    --cm-string: #4a7c20;
+    --cm-number: #b35a1f;
+    --cm-comment: #998878;
+    --cm-tag: #8b5a3c;
+    --cm-atom: #6b4a2c;
+    --cm-bracket: #7a5a3c;
+    --cm-operator: #b35a1f;
+    --cm-punctuation: #7a5a3c;
+
+    --surface-1: rgba(0,0,0,.02);
+    --surface-2: rgba(0,0,0,.04);
+    --border-subtle: rgba(0,0,0,.08);
+    --border-medium: rgba(0,0,0,.13);
+}
+
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }

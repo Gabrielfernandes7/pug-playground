@@ -1,0 +1,44 @@
+html, body { height: 100%; margin: 0; overflow: hidden; }
+body { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; }
+
+.resizer {
+    width: 5px; cursor: col-resize;
+    background: var(--border-subtle);
+    transition: background .15s;
+}
+.resizer:hover, .resizer.active { background: var(--color-primary); }
+
+.editor-host { flex: 1; overflow: hidden; position: relative; }
+.editor-host.dragging::after {
+    content: 'Solte para importar';
+    position: absolute; inset: 8px;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px dashed var(--color-primary);
+    border-radius: var(--pug-radius-lg);
+    background: color-mix(in oklch, var(--color-primary) 10%, transparent);
+    color: var(--color-primary);
+    font-weight: 600;
+    z-index: 10;
+    pointer-events: none;
+}
+
+#preview-pane { display: flex; flex-direction: column; }
+#iframe-wrapper {
+    flex: 1;
+    overflow: auto;
+    background: color-mix(in oklch, var(--color-base-300) 60%, transparent);
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    padding: 8px;
+    position: relative;
+}
+#preview-frame {
+    border: 0;
+    background: #fff;
+    box-shadow: 0 4px 24px rgba(0,0,0,.25);
+    border-radius: var(--pug-radius-md);
+    width: 100%;
+    max-width: 100%;
+    transition: max-width .3s ease, width .3s ease;
+}
