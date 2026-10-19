@@ -2,12 +2,18 @@ window.PUG = window.PUG || {};
 
 PUG.CONSOLE_CAPTURE_SCRIPT = `<script>
 (function(){
+  var parentOrigin = '*';
+  window.addEventListener('message', function(e){
+    if (e.data && e.data.__pgInit === true) {
+      parentOrigin = e.origin;
+    }
+  }, { once: true });
   function send(type, args){
     try {
       var payload = Array.prototype.map.call(args, function(a){
         try { return typeof a === 'object' ? JSON.stringify(a) : String(a); } catch(e){ return String(a); }
       });
-      parent.postMessage({ __pg: true, type: type, args: payload }, '*');
+      parent.postMessage({ __pg: true, type: type, args: payload }, parentOrigin);
     } catch(e){}
   }
   var oe = window.onerror;

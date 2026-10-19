@@ -74,14 +74,14 @@
             <span class="brand-name text-base hidden sm:inline">Pug Render</span>
         </a>
         <div class="flex-1"></div>
-        <button id="theme-btn" class="btn-pug btn-pug-ghost btn-pug-icon" aria-label="Alternar tema" title="Alternar tema claro/escuro">
+        <button id="theme-btn" class="btn-pug btn-pug-ghost btn-pug-icon" aria-label="Alternar tema claro/escuro" title="Alternar tema claro/escuro">
             <i class="fas fa-moon" id="theme-icon"></i>
         </button>
-        <button id="import-btn" class="btn-pug btn-pug-ghost" title="Importar arquivo (.pug, .css, .js)">
+        <button id="import-btn" class="btn-pug btn-pug-ghost" aria-label="Importar arquivo" title="Importar arquivo (.pug, .css, .js)">
             <i class="fas fa-file-import"></i>
             <span class="hidden md:inline">Importar</span>
         </button>
-        <button id="share-btn" class="btn-pug btn-pug-ghost" title="Compartilhar por link">
+        <button id="share-btn" class="btn-pug btn-pug-ghost" aria-label="Compartilhar por link" title="Compartilhar por link">
             <i class="fas fa-share-nodes"></i>
             <span class="hidden md:inline">Share</span>
         </button>
@@ -106,7 +106,7 @@
                     script.js
                 </div>
                 <div class="flex-1"></div>
-                <button id="clear-btn" class="btn-pug btn-pug-ghost btn-pug-icon" aria-label="Limpar arquivo ativo" title="Limpar arquivo ativo">
+                <button id="clear-btn" class="btn-pug btn-pug-ghost btn-pug-icon" aria-label="Limpar todos os arquivos" title="Limpar Pug, CSS e JS (com confirmação)">
                     <i class="fas fa-eraser"></i>
                 </button>
             </div>
@@ -125,9 +125,9 @@
                 <input class="preview-url" type="text" value="http://localhost:3000/" readonly tabindex="-1" aria-label="Endereço (apenas visual)">
                 <button id="refresh-btn" class="preview-nav-btn" aria-label="Recarregar" title="Recarregar (Ctrl+Enter)"><i class="fas fa-rotate"></i></button>
                 <div class="preview-tools">
-                    <button class="device-btn active" data-width="0" title="Desktop"><i class="fas fa-desktop"></i></button>
-                    <button class="device-btn" data-width="768" title="Tablet (768px)"><i class="fas fa-tablet-screen-button"></i></button>
-                    <button class="device-btn" data-width="375" title="Mobile (375px)"><i class="fas fa-mobile-screen"></i></button>
+                    <button class="device-btn active" data-width="0" aria-label="Visualizar em desktop" title="Desktop"><i class="fas fa-desktop"></i></button>
+                    <button class="device-btn" data-width="768" aria-label="Visualizar em tablet (768px)" title="Tablet (768px)"><i class="fas fa-tablet-screen-button"></i></button>
+                    <button class="device-btn" data-width="375" aria-label="Visualizar em mobile (375px)" title="Mobile (375px)"><i class="fas fa-mobile-screen"></i></button>
                     <span id="status-dot" class="w-2 h-2 rounded-full inline-block mx-1" style="background: var(--color-success);" aria-hidden="true"></span>
                     <span id="status-text" class="text-xs hidden md:inline" style="color: color-mix(in oklch, var(--color-base-content) 55%, transparent);" aria-live="polite">Carregando…</span>
                     <button id="open-external-btn" class="preview-nav-btn" aria-label="Abrir em nova aba" title="Abrir em nova aba"><i class="fas fa-arrow-up-right-from-square"></i></button>

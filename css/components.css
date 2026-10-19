@@ -252,3 +252,27 @@
 }
 .btn-pug-ghost:hover { background: var(--surface-1); color: var(--color-base-content); }
 .btn-pug-icon { padding: 7px; width: 32px; height: 32px; justify-content: center; }
+
+/* Acessibilidade: Focus visible em botões */
+.btn-pug:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+/* Acessibilidade: Respeitar preferência de movimento reduzido */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+/* Light mode: Melhorar contraste de texto secundário */
+[data-theme="light"] {
+    --text-secondary: oklch(35% 0.04 55);
+}
+[data-theme="light"] .file-tab,
+[data-theme="light"] .device-btn,
+[data-theme="light"] .preview-nav-btn {
+    color: var(--text-secondary, color-mix(in oklch, var(--color-base-content) 70%, transparent));
+}

@@ -68,7 +68,8 @@ PUG.boot = async function() {
     let refreshRaf = 0;
     let debounce, saveDebounce;
     let consoleCount = 0;
-    let currentTheme = storage.get(CONFIG.THEME_KEY) || 'dark';
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    let currentTheme = storage.get(CONFIG.THEME_KEY) || (prefersDark ? 'dark' : 'light');
 
     function encodeState(s) {
         const json = JSON.stringify({ p: s.pug, c: s.css, j: s.js });
@@ -125,6 +126,11 @@ PUG.boot = async function() {
         css: CodeMirror.Doc(state.css, FILE_META.css.mode),
         js:  CodeMirror.Doc(state.js,  FILE_META.js.mode),
     };
+
+    const iframeToken = Math.random().toString(36).slice(2, 11);
+    iframe.addEventListener('load', () => {
+        iframe.contentWindow.postMessage({ __pgInit: true, token: iframeToken }, window.location.origin);
+    }, { once: true });
 
     const editor = CodeMirror(editorHost, {
         value: '',
@@ -290,6 +296,7 @@ PUG.boot = async function() {
     }
     window.addEventListener('message', (e) => {
         if (!e.data || e.data.__pg !== true) return;
+        if (e.origin !== window.location.origin) return;
         appendConsole(e.data.type, e.data.args || []);
     });
     consoleHeader.addEventListener('click', (e) => {
@@ -388,9 +395,11 @@ PUG.boot = async function() {
     refreshBtn.addEventListener('click', () => renderAll());
     openExtBtn.addEventListener('click', openExternal);
     clearBtn.addEventListener('click', () => {
-        const hasContent = docs[activeFile].getValue().trim().length > 0;
-        if (hasContent && !confirm(`Limpar ${FILE_META[activeFile].label}?`)) return;
-        docs[activeFile].setValue('');
+        const hasContent = Object.values(docs).some(doc => doc.getValue().trim().length > 0);
+        if (hasContent && !confirm('Limpar todos os arquivos (Pug, CSS e JS)?')) return;
+        docs.pug.setValue('');
+        docs.css.setValue('');
+        docs.js.setValue('');
         renderAll();
     });
     fullscreenBtn.addEventListener('click', () => {
