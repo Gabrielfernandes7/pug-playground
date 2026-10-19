@@ -1,0 +1,92 @@
+/* ============================================================
+   Responsivo
+   - Celular (< 768px): um painel por vez (Código | Preview)
+   - Tablet (768–1023px): layout dividido, alvos de toque maiores
+   - Desktop (≥ 1024px): sem alterações
+   ============================================================ */
+
+/* Alvos de toque: pelo menos 40px */
+@media (pointer: coarse) {
+    .btn-pug-icon,
+    .preview-nav-btn { width: 40px; height: 40px; }
+    .device-btn { min-width: 40px; min-height: 40px; justify-content: center; }
+    .file-tab { padding: 10px 14px; }
+}
+
+/* Barra de alternância Código | Preview: só aparece no celular */
+.view-switch { display: none; }
+
+/* ---------- Celular ---------- */
+@media (max-width: 767px) {
+    body { height: 100vh; height: 100dvh; }
+    body > header { height: 52px !important; }
+    body > footer { display: none; }
+
+    #main-area { min-height: 0; }
+    #editor-pane,
+    #preview-pane {
+        width: 100% !important;
+        min-width: 0 !important;
+        flex: 1 1 auto;
+        min-height: 0;
+    }
+    #main-area[data-view="editor"] #preview-pane,
+    #main-area[data-view="preview"] #editor-pane { display: none; }
+    .resizer { display: none; }
+
+    .view-switch {
+        display: flex;
+        flex-shrink: 0;
+        background: var(--color-base-100);
+        border-top: 1px solid var(--border-subtle);
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+    .view-switch-btn {
+        flex: 1;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 2px; min-height: 52px;
+        font-size: 11px; font-weight: 600;
+        color: color-mix(in oklch, var(--color-base-content) 55%, transparent);
+        border-top: 2px solid transparent;
+        transition: color .15s, border-color .15s;
+    }
+    .view-switch-btn i { font-size: 16px; }
+    .view-switch-btn.active {
+        color: var(--color-primary);
+        border-top-color: var(--color-primary);
+    }
+
+    /* Abas de arquivo rolam na horizontal em vez de cortar */
+    .file-tabs { overflow-x: auto; scrollbar-width: none; }
+    .file-tabs::-webkit-scrollbar { display: none; }
+    .file-tab { flex-shrink: 0; }
+
+    /* Toolbar do preview: só o campo de URL e o refresh */
+    .preview-toolbar { gap: 6px; padding: 0 8px; }
+    .preview-arrows,
+    .preview-tools { display: none; }
+    .preview-url { font-size: 16px; } /* evita zoom automático no iOS */
+
+    /* CodeMirror: o textarea oculto também não pode provocar zoom no iOS */
+    .CodeMirror textarea { font-size: 16px !important; }
+
+    #console-panel { max-height: 35vh; }
+    #toast { bottom: 76px; }
+
+    dialog { width: calc(100vw - 24px); }
+    .modal-content { min-width: 0; width: 100%; padding: 16px; }
+    .template-grid { grid-template-columns: 1fr; }
+}
+
+/* ---------- Tablet ---------- */
+@media (min-width: 768px) and (max-width: 1023px) {
+    .device-btn { min-height: 32px; }
+    .preview-url { font-size: 12px; min-width: 60px; }
+    /* Painel de preview estreito: a toolbar precisa caber sem cortar */
+    .preview-arrows { display: none; }
+}
+
+/* Abaixo de 1280px o painel de preview é metade da tela: o status vira só o ponto colorido */
+@media (max-width: 1279px) {
+    #status-text { display: none; }
+}

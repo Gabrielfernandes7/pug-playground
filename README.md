@@ -1,92 +1,70 @@
-# Pug Render — Handoff
+# Pug Render
 
-> [!NOTE]
-> Playground single-file (`index.html`) com CodeMirror + Pug em iframe sandbox. Zero build.
+Playground de Pug: edite `index.pug`, `styles.css` e `script.js` e veja o resultado ao vivo. Sem backend e sem build no runtime.
 
----
+Abra `index.html` no navegador, ou sirva a pasta com qualquer servidor estático.
 
-## 🏗️ Arquitetura
+## Estrutura
 
-```mermaid
-flowchart LR
-    A[CodeMirror] -->|change| B[compile]
-    B -->|ok| C[buildOutputDoc]
-    B -->|erro| D[error-banner]
-    C --> E[iframe.srcdoc]
-    A -->|debounce| F[localStorage]
-    style D fill:#fee
-    style E fill:#efe
+```
+index.html          layout (header, editor, preview, console)
+css/                tokens (tema claro/escuro), layout, editor, componentes, responsivo
+js/                 config, utils, compile, editor, app (orquestrador), templates (gerado)
+templates/          fonte dos templates: <id>/{index.pug,styles.css,script.js} + index.json
+scripts/            build-templates.js
+assets/             logo e ícones
 ```
 
-> [!IMPORTANT]
-> Fluxo único: **editor → compile → buildOutputDoc → iframe**. Se você vir `iframe.srcdoc` em qualquer outro lugar, é bug.
+## Fluxo
 
----
+`editor` → `PUG.compileAll(source)` → `updatePreview(html)` → `iframe.srcdoc`
 
-## 🔒 Segurança
+Essa é a única escrita no iframe. Erros de compilação mantêm o último preview válido e mostram o banner.
 
-> [!CAUTION]
-> `sandbox="allow-scripts allow-popups allow-forms"` — **sem** `allow-same-origin`.
-> Juntar `allow-same-origin` + `allow-scripts` deixa o código do preview escapar do iframe.
+## Segurança
 
----
+O iframe usa `sandbox="allow-scripts allow-popups allow-forms"`. **Não** adicione `allow-same-origin`: com `allow-scripts` ele permitiria que o código do preview escape do sandbox.
 
-## ✅ Correções aplicadas
+## Templates
 
-| # | Fix | Tag |
-|---|---|---|
-| 1 | Sandbox sem `allow-same-origin` | Poka-yoke |
-| 2 | `buildOutputDoc()` como fonte única | Poka-yoke |
-| 3 | Guard `typeof CodeMirror` no `defineMode` | Jidoka |
-| 4 | `beforeunload` com `persistedOk` + `lastSavedValue` | Jidoka |
-| 5 | `pointer-events:none` no iframe durante drag | Poka-yoke |
-| 6 | `requestAnimationFrame` no `editor.refresh()` | Muda |
-| 7 | Listeners de drag nomeados e removidos | Muda |
-| 8 | `aria-live` + `aria-label` + `title` | Andon |
-| 9 | `compile()` pura (testável) | Jidoka |
-| 10 | `FILE_META` só `.pug` | 5S |
-| 11 | Ícone SVG multi-cor do Pug | — |
+Edite os arquivos em `templates/<id>/` e gere o `js/templates.js`:
 
----
+```bash
+node scripts/build-templates.js
+```
 
-## 🚀 Uso
+Para adicionar um template, crie a pasta e inclua o `id` em `templates/index.json`. A ordem do array é a ordem da galeria. `js/templates.js` é gerado: não edite à mão.
+
+## Atalhos
 
 | Atalho | Ação |
 |---|---|
-| `Ctrl+Enter` | Compilar agora |
-| `Ctrl+S` | Baixar `output.html` |
-| Duplo clique no divisor | 50/50 |
-| Drag no divisor | Redimensionar |
+| `Ctrl/Cmd+Enter` | Compilar agora |
+| `Ctrl/Cmd+S` | Baixar `output.html` |
+| `Ctrl/Cmd+Shift+V` | Colar código e renderizar |
+| Duplo clique no divisor | Volta para 50/50 |
 
----
+## Responsivo
 
-## 🐛 Troubleshooting
+- **Celular (< 768px):** um painel por vez, com a barra Código | Preview. O Run leva ao preview.
+- **Tablet (768–1023px):** layout dividido, com o divisor arrastável por toque.
+- **Desktop (≥ 1024px):** layout dividido completo.
 
-> [!WARNING]
-> **"Carregando…" travado** → todos os 5 CDNs de `pug` caíram. Libere `esm.sh`, `cdn.jsdelivr.net`, `unpkg.com`, `cdn.skypack.dev`, `bundle.run`.
+As regras ficam em `css/responsive.css`.
 
-> [!WARNING]
-> **"salvar: off"** → `localStorage` bloqueado (modo privado). `beforeunload` sempre avisa antes de fechar.
+## Solução de problemas
 
-> [!NOTE]
-> **Preview branco** → abra o Console **no contexto do iframe** (dropdown do DevTools).
+- **"Carregando…" não termina:** os CDNs do Pug estão bloqueados. Libere `esm.sh`, `cdn.jsdelivr.net`, `unpkg.com`, `cdn.skypack.dev` e `bundle.run`.
+- **"salvar: off":** `localStorage` está bloqueado (por exemplo, modo privado). O aviso de fechar a página continua ativo.
+- **Preview em branco:** abra o Console do DevTools no contexto do iframe (seletor de contexto).
+- **Algum recurso não carrega ao abrir por `file://`:** sirva a pasta por HTTP (por exemplo, `python3 -m http.server`).
 
----
+## Roadmap
 
-## 🔮 Roadmap
+- **P1:** validar `event.source` nas mensagens do iframe (hoje só se checa `__pg`).
+- **P2:** CSP mínima no documento pai.
+- **P2:** testes (Vitest) para `compileAll` e `buildFullDoc`.
 
-- **P1** — `postMessage` para capturar erros dentro do iframe (validar `event.source`)
-- **P2** — CSP mínima no parent
-- **P2** — Vitest em `compile()` e `buildOutputDoc()`
+## Referência
 
----
-
-## 📁 Símbolos-chave
-
-```
-CONFIG              constantes globais
-compile(src)        puro → { ok, html|error, elapsed }
-buildOutputDoc(h)   fonte única de saída
-boot()              orquestrador
-showCritical(errs)  tela de falha total
-```
+- Conversor online de Pug para HTML: https://pug.vercel.app

@@ -23,6 +23,7 @@
 .cm-s-pug .cm-number { color: var(--cm-number); }
 .cm-s-pug .cm-comment { color: var(--cm-comment); font-style: italic; }
 .cm-s-pug .cm-tag { color: var(--cm-tag); }
+.cm-s-pug .cm-attribute { color: var(--cm-attribute); }
 .cm-s-pug .cm-atom { color: var(--cm-atom); }
 .cm-s-pug .cm-bracket { color: var(--cm-bracket); }
 .cm-s-pug .cm-operator { color: var(--cm-operator); }

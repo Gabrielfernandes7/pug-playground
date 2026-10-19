@@ -1,0 +1,45 @@
+-
+  const features = [
+    { title: 'Indentação', desc: 'Sem tags de fechamento. A hierarquia é o próprio código.' },
+    { title: 'Reutilizável', desc: 'Mixins, variáveis e includes para evitar repetição.' },
+    { title: 'Rápido', desc: 'Compila para HTML limpo e leve. Ideal para qualquer stack.' }
+  ]
+
+doctype html
+html(lang="pt-BR")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport" content="width=device-width, initial-scale=1.0")
+    title Meu Site
+  body
+    header.site-header
+      .container
+        a.brand(href="#")
+          span.brand-icon P
+          | PugSite
+        nav.site-nav
+          a(href="#") Início
+          a(href="#") Recursos
+          a(href="#") Contato
+    main
+      section.hero
+        .container
+          span.badge Novo · v1.0
+          h1 Um site simples
+            br
+            span.highlight escrito em Pug.
+          p.lead Pug é uma linguagem de template para HTML que usa indentação e abreviações.
+          .actions
+            a.btn.btn-primary(href="#") Começar agora
+            a.btn.btn-ghost(href="#") Saber mais
+      section.features
+        .container
+          .grid
+            each feat in features
+              .card
+                .card-icon ✓
+                h3= feat.title
+                p= feat.desc
+    footer.site-footer
+      .container
+        p Feito com ❤ em Pug · #{new Date().getFullYear()}

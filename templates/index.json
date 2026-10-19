@@ -1,0 +1,32 @@
+[
+  {
+    "id": "cheatsheet",
+    "name": "Pug Cheatsheet",
+    "description": "Referência rápida de sintaxe",
+    "icon": "fa-book"
+  },
+  {
+    "id": "landing",
+    "name": "Landing page",
+    "description": "Site de marketing com hero, features e footer",
+    "icon": "fa-rocket"
+  },
+  {
+    "id": "brandbook",
+    "name": "Brand book",
+    "description": "Paleta, tipografia e componentes",
+    "icon": "fa-palette"
+  },
+  {
+    "id": "blog",
+    "name": "Blog post",
+    "description": "Artigo com header, conteúdo e autor",
+    "icon": "fa-newspaper"
+  },
+  {
+    "id": "blank",
+    "name": "Em branco",
+    "description": "Comece do zero com as três abas vazias",
+    "icon": "fa-file"
+  }
+]

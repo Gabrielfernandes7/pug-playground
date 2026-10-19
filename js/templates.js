@@ -1,288 +1,197 @@
+// GERADO por scripts/build-templates.js — não edite à mão.
+// Edite os arquivos em templates/ e rode: node scripts/build-templates.js
 window.PUG = window.PUG || {};
 
 PUG.TEMPLATES = {
     cheatsheet: {
-    name: 'Pug Cheatsheet',
-    description: 'Referência completa — tags, atributos, JS, loops, condicionais, includes e mixins',
-    icon: 'fa-book',
-    pug: `-
-  const sections = [
-    {
-      id: 'comentarios',
-      icon: 'fa-comment-slash',
-      title: 'Comentários',
-      note: null,
-      items: [
-        { title: 'Uma linha', code: '//- Comentário', output: '(não renderiza)' },
-        { title: 'Várias linhas', code: '//-\\n  Comentário\\n  em várias linhas', output: '(não renderiza)' }
-      ]
-    },
-    {
-      id: 'tags',
-      icon: 'fa-code',
-      title: 'Tags',
-      note: null,
-      items: [
-        { title: 'Básico', code: 'div\\nh1\\nminha-tag', output: '<div></div>\\n<h1></h1>\\n<minha-tag></minha-tag>' },
-        { title: 'Irmãs', code: 'div\\ndiv', output: '<div></div>\\n<div></div>' },
-        { title: 'Aninhadas', code: 'div\\n  div', output: '<div>\\n  <div></div>\\n</div>' },
-        { title: 'Texto', code: 'h1 Olá, pessoas', output: '<h1>Olá, pessoas</h1>' },
-        { title: 'Texto multi-linha', code: 'div.\\n  Oi,\\n  tudo bem?', output: '<div>Oi, tudo bem?</div>' }
-      ]
-    },
-    {
-      id: 'atributos',
-      icon: 'fa-tag',
-      title: 'Atributos',
-      note: null,
-      items: [
-        { title: 'Múltiplos', code: 'div(class="minha" id="meu" enabled)', output: '<div class="minha" id="meu" enabled></div>' },
-        { title: 'Classe abreviada', code: 'span.minha-class', output: '<span class="minha-class"></span>' },
-        { title: 'ID abreviado', code: 'div#meu-id', output: '<div id="meu-id"></div>' },
-        { title: 'Classe + ID', code: 'div#meu-id.minha-class', output: '<div class="minha-class" id="meu-id"></div>' }
-      ]
-    },
-    {
-      id: 'javascript',
-      icon: 'fa-js',
-      title: 'JavaScript',
-      note: null,
-      items: [
-        { title: 'Variável', code: '- const lang = "pug"', output: '(variável definida)' },
-        { title: 'Multi-linha', code: '-\\n  const lang = "pug"\\n  const ok = true', output: '(variáveis definidas)' },
-        { title: 'Classes dinâmicas', code: '- const c = ["a","b","c"]\\ndiv(class=c)', output: '<div class="a b c"></div>' },
-        { title: 'Atributos dinâmicos', code: '- const a = {src:"p.png", alt:"Foto"}\\nimg&attributes(a)', output: '<img src="p.png" alt="Foto">' },
-        { title: 'Atributo booleano', code: '- let off = false\\ninput(disabled=off)\\n- off = true\\ninput(disabled=off)', output: '<input>\\n<input disabled>' },
-        { title: 'Interpolação', code: '- const n = "Bob"\\nh1 Olá, #{n}', output: '<h1>Olá, Bob</h1>' },
-        { title: 'Buffered', code: '- const n = "Bob"\\nh1= n', output: '<h1>Bob</h1>' }
-      ]
-    },
-    {
-      id: 'loops',
-      icon: 'fa-repeat',
-      title: 'Loops',
-      note: "'each' e 'for' são equivalentes — use 'each'.",
-      items: [
-        { title: 'each', code: 'each v in [1,2,3]\\n  p= v', output: '<p>1</p>\\n<p>2</p>\\n<p>3</p>' },
-        { title: 'each com índice', code: 'each v, i in [1,2,3]\\n  p= v + "-" + i', output: '<p>1-0</p>\\n<p>2-1</p>\\n<p>3-2</p>' },
-        { title: 'each com else', code: 'each v in []\\n  p= v\\nelse\\n  p Sem valores', output: '<p>Sem valores</p>' }
-      ]
-    },
-    {
-      id: 'condicionais',
-      icon: 'fa-code-branch',
-      title: 'Condicionais',
-      note: null,
-      items: [
-        { title: 'if / else if / else', code: '- const n = 5\\nif n < 5\\n  p menor\\nelse if n > 5\\n  p maior\\nelse\\n  p igual', output: '<p>igual</p>' },
-        { title: 'case / when', code: '- const s = "Aguardando"\\ncase s\\n  when "Aguardando"\\n    p.warn Em espera\\n  when "Completado"\\n    p.success Completado\\n  default\\n    p Erro', output: '<p class="warn">Em espera</p>' }
-      ]
-    },
-    {
-      id: 'includes',
-      icon: 'fa-file-import',
-      title: 'Includes',
-      note: 'No playground não há sistema de arquivos — use as abas styles.css e script.js.',
-      items: [
-        { title: 'Partial Pug', code: 'html\\n  body\\n    include includes/nav.pug', output: '(conteúdo do arquivo é injetado)' },
-        { title: 'JS e CSS', code: 'script\\n  include scripts/index.js\\nstyle\\n  include styles/theme.css', output: '(conteúdo injetado inline)' }
-      ]
-    },
-    {
-      id: 'mixins',
-      icon: 'fa-cubes',
-      title: 'Mixins',
-      note: null,
-      items: [
-        { title: 'Básico', code: 'mixin basic\\n  div Olá\\n+basic', output: '<div>Olá</div>' },
-        { title: 'Com argumentos', code: 'mixin comment(nome, txt)\\n  div\\n    span= nome\\n    div= txt\\n+comment("Gil", "Top")', output: '<div><span>Gil</span><div>Top</div></div>' }
-      ]
-    }
-  ]
-
-doctype html
+        name: "Pug Cheatsheet",
+        description: "Referência rápida de sintaxe",
+        icon: "fa-book",
+        pug: `doctype html
 html(lang="pt-BR")
   head
     meta(charset="UTF-8")
     meta(name="viewport" content="width=device-width, initial-scale=1.0")
     title Pug Cheatsheet
   body
-    .container
-      header.doc-header
-        h1 Pug Cheatsheet
-        p.subtitle Referência rápida de sintaxe — v3
-      nav.nav
-        each s in sections
-          a(href="#" + s.id)= s.title
-      each section in sections
-        section.section(id=section.id)
-          h2.section-title
-            i(class="fas " + section.icon)
-            = section.title
-          if section.note
-            .section-note= section.note
-          each ex in section.items
-            .example
-              .example-title= ex.title
-              .example-body
-                .pane.code
-                  pre
-                    code= ex.code
-                .pane.output
-                  pre
-                    code= ex.output
-      footer.doc-footer
-        p Documentação oficial em
-          a(href="https://pugjs.org/api/getting-started.html" target="_blank" rel="noopener")  pugjs.org`,
-    css: `* { box-sizing: border-box; margin: 0; padding: 0; }
+    header
+      h1 Pug Cheatsheet
+      p Referência rápida de sintaxe
+
+    section
+      h2 Comentários
+      pre
+        code.
+          //- Comentário de uma linha
+
+    section
+      h2 Tags
+      .row
+        pre
+          code.
+            div
+            h1
+            minha-tag
+            .classe
+            #id
+            div.classe#id
+        pre
+          code.
+            &lt;div&gt;&lt;/div&gt;
+            &lt;h1&gt;&lt;/h1&gt;
+            &lt;minha-tag&gt;&lt;/minha-tag&gt;
+            &lt;div class="classe"&gt;&lt;/div&gt;
+            &lt;div id="id"&gt;&lt;/div&gt;
+            &lt;div class="classe" id="id"&gt;&lt;/div&gt;
+
+    section
+      h2 Atributos
+      .row
+        pre
+          code.
+            div(class="foo" id="bar")
+            a(href="#" target="_blank") Link
+            img(src="foto.png" alt="Foto")
+            input(disabled)
+        pre
+          code.
+            &lt;div class="foo" id="bar"&gt;&lt;/div&gt;
+            &lt;a href="#" target="_blank"&gt;Link&lt;/a&gt;
+            &lt;img src="foto.png" alt="Foto"&gt;
+            &lt;input disabled&gt;
+
+    section
+      h2 JavaScript
+      .row
+        pre
+          code.
+            - const nome = "Bob"
+            h1 Olá, #{nome}
+            h2= nome
+        pre
+          code.
+            &lt;h1&gt;Olá, Bob&lt;/h1&gt;
+            &lt;h2&gt;Bob&lt;/h2&gt;
+
+    section
+      h2 Loops
+      .row
+        pre
+          code.
+            each v in [1, 2, 3]
+              p= v
+        pre
+          code.
+            &lt;p&gt;1&lt;/p&gt;
+            &lt;p&gt;2&lt;/p&gt;
+            &lt;p&gt;3&lt;/p&gt;
+
+    section
+      h2 Condicionais
+      .row
+        pre
+          code.
+            if n > 5
+              p grande
+            else
+              p pequeno
+        pre
+          code.
+            &lt;p&gt;pequeno&lt;/p&gt;
+
+    section
+      h2 Mixins
+      .row
+        pre
+          code.
+            mixin card(t)
+              .card= t
+            +card("Olá")
+        pre
+          code.
+            &lt;div class="card"&gt;Olá&lt;/div&gt;
+
+    footer
+      p Documentação:
+        a(href="https://pugjs.org" target="_blank" rel="noopener")  pugjs.org`,
+        css: `* { box-sizing: border-box; margin: 0; padding: 0; }
 body {
   font-family: system-ui, sans-serif;
   background: #faf6ef;
   color: #2a221c;
   line-height: 1.6;
-  padding: 40px 24px 60px;
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 32px 24px 48px;
 }
-.container { max-width: 1000px; margin: 0 auto; }
-
-.doc-header {
-  text-align: center;
-  padding-bottom: 28px;
+header {
+  padding-bottom: 20px;
   border-bottom: 2px solid #b35a1f;
-  margin-bottom: 20px;
+  margin-bottom: 32px;
 }
-.doc-header h1 {
-  font-family: 'Iowan Old Style', Georgia, serif;
-  font-size: 44px;
-  line-height: 1.1;
+h1 {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 36px;
   color: #1c1713;
   letter-spacing: -0.02em;
 }
-.doc-header .subtitle {
-  color: #998878;
-  margin-top: 10px;
-  font-size: 15px;
-}
-
-.nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: center;
-  padding: 20px 0 32px;
-  border-bottom: 1px solid #e8dfd2;
-  margin-bottom: 48px;
-}
-.nav a {
-  padding: 6px 14px;
-  background: #fff;
-  border: 1px solid #e8dfd2;
-  border-radius: 999px;
-  color: #6b5a4c;
-  text-decoration: none;
-  font-size: 13px;
-  font-weight: 600;
-  transition: all .15s;
-}
-.nav a:hover {
-  background: #b35a1f;
-  color: #fff;
-  border-color: #b35a1f;
-}
-
-.section { margin-bottom: 56px; scroll-margin-top: 24px; }
-.section-title {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-family: 'Iowan Old Style', Georgia, serif;
-  font-size: 26px;
-  color: #4e342e;
-  margin-bottom: 20px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #e8dfd2;
-}
-.section-title i { color: #b35a1f; font-size: 20px; }
-.section-note {
-  padding: 12px 16px;
-  margin-bottom: 16px;
-  background: #f3ecdf;
-  border-left: 3px solid #f0a050;
-  border-radius: 6px;
-  font-size: 13px;
-  color: #6b5a4c;
-}
-
-.example {
-  background: #fff;
-  border: 1px solid #e8dfd2;
-  border-radius: 12px;
-  margin-bottom: 12px;
-  overflow: hidden;
-  transition: box-shadow .15s;
-}
-.example:hover { box-shadow: 0 4px 16px rgba(139,90,60,.08); }
-.example-title {
-  padding: 10px 16px;
-  background: #faf6ef;
-  border-bottom: 1px solid #e8dfd2;
+header p { color: #998878; margin-top: 6px; font-size: 14px; }
+section { margin-bottom: 28px; }
+h2 {
   font-size: 12px;
-  font-weight: 700;
-  color: #8b5a3c;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
+  color: #b35a1f;
+  margin-bottom: 10px;
+  font-weight: 700;
 }
-.example-body {
+.row {
   display: grid;
   grid-template-columns: 1fr 1fr;
+  border: 1px solid #e8dfd2;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
 }
-@media (max-width: 720px) {
-  .example-body { grid-template-columns: 1fr; }
-}
-.pane { padding: 14px 16px; overflow-x: auto; }
-.pane pre {
+pre {
   margin: 0;
+  padding: 14px 16px;
   font-family: 'JetBrains Mono', Consolas, monospace;
-  font-size: 12px;
+  font-size: 12.5px;
   line-height: 1.7;
+  overflow-x: auto;
   white-space: pre;
-  tab-size: 2;
 }
-.pane.code { background: #fff; }
-.pane.code pre { color: #2a221c; }
-.pane.output {
+pre:first-child { color: #2a221c; }
+pre:last-child {
   background: #faf6ef;
+  color: #4a7c20;
   border-left: 1px solid #e8dfd2;
 }
-@media (max-width: 720px) {
-  .pane.output { border-left: 0; border-top: 1px solid #e8dfd2; }
-}
-.pane.output pre {
-  color: #4a7c20;
-  font-style: italic;
-}
-
-.doc-footer {
-  margin-top: 60px;
-  padding-top: 24px;
+footer {
+  margin-top: 40px;
+  padding-top: 20px;
   border-top: 1px solid #e8dfd2;
   text-align: center;
   font-size: 13px;
   color: #998878;
 }
-.doc-footer a {
+footer a {
   color: #b35a1f;
   text-decoration: none;
   font-weight: 600;
 }
-.doc-footer a:hover { text-decoration: underline; }`,
-    js: `// Cheatsheet é puramente documentação — sem interatividade.
-// Os exemplos são strings, não código executável.
-console.log('Pug Cheatsheet carregado');`,
-},
+footer a:hover { text-decoration: underline; }
+@media (max-width: 600px) {
+  .row { grid-template-columns: 1fr; }
+  pre:last-child { border-left: 0; border-top: 1px solid #e8dfd2; }
+}`,
+        js: `console.log('Pug Cheatsheet');`,
+    },
     landing: {
-        name: 'Landing page',
-        description: 'Site de marketing com hero, features e footer',
-        icon: 'fa-rocket',
+        name: "Landing page",
+        description: "Site de marketing com hero, features e footer",
+        icon: "fa-rocket",
         pug: `-
   const features = [
     { title: 'Indentação', desc: 'Sem tags de fechamento. A hierarquia é o próprio código.' },
@@ -364,9 +273,9 @@ h1 { font-size: 48px; line-height: 1.1; color: #1c1713; }
 });`,
     },
     brandbook: {
-        name: 'Brand book',
-        description: 'Paleta, tipografia e componentes',
-        icon: 'fa-palette',
+        name: "Brand book",
+        description: "Paleta, tipografia e componentes",
+        icon: "fa-palette",
         pug: `-
   const palette = [
     { name: 'Terracotta', hex: '#b35a1f' },
@@ -442,9 +351,9 @@ h2 { color: #4e342e; margin-bottom: 20px; text-transform: uppercase; letter-spac
         js: ``,
     },
     blog: {
-        name: 'Blog post',
-        description: 'Artigo com header, conteúdo e autor',
-        icon: 'fa-newspaper',
+        name: "Blog post",
+        description: "Artigo com header, conteúdo e autor",
+        icon: "fa-newspaper",
         pug: `doctype html
 html(lang="pt-BR")
   head
@@ -506,9 +415,9 @@ blockquote { border-left: 3px solid #b35a1f; padding-left: 20px; font-style: ita
         js: ``,
     },
     blank: {
-        name: 'Em branco',
-        description: 'Comece do zero com as três abas vazias',
-        icon: 'fa-file',
+        name: "Em branco",
+        description: "Comece do zero com as três abas vazias",
+        icon: "fa-file",
         pug: `doctype html
 html(lang="pt-BR")
   head

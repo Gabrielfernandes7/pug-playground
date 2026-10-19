@@ -2,8 +2,9 @@
 <html lang="pt-BR" data-theme="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pug Render • Playground</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Pug Render - Playground</title>
+    <link rel="icon" type="image/svg+xml" href="assets/pug-logo.svg">
 
     <!-- CDNs externos -->
     <link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css" />
@@ -26,6 +27,7 @@
     <link rel="stylesheet" href="css/layout.css">
     <link rel="stylesheet" href="css/codemirror.css">
     <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/responsive.css">
 
     <!-- Loader do Pug (inline: roda em paralelo com o resto) -->
     <script>
@@ -89,9 +91,9 @@
         </button>
     </header>
 
-    <div id="main-area" class="flex flex-1 overflow-hidden" style="min-height: 0;">
+    <div id="main-area" class="flex flex-1 overflow-hidden" style="min-height: 0;" data-view="editor">
         <div id="editor-pane" class="flex flex-col overflow-hidden" style="width: 50%; min-width: 280px; background: var(--cm-bg);">
-            <div class="flex items-center shrink-0 border-b" style="height: 38px; background: var(--color-base-200); border-color: var(--border-subtle);">
+            <div class="file-tabs flex items-center shrink-0 border-b" style="height: 38px; background: var(--color-base-200); border-color: var(--border-subtle);">
                 <div class="file-tab active" data-file="pug">
                     <span class="file-tab-icon" data-file-icon></span>
                     index.pug
@@ -115,18 +117,22 @@
         <div id="resizer" class="resizer shrink-0" role="separator" aria-orientation="vertical" aria-label="Redimensionar painéis"></div>
 
         <div id="preview-pane" class="flex flex-col overflow-hidden flex-1" style="min-width: 280px;">
-            <div class="flex items-center justify-between px-2 shrink-0 border-b" style="height: 38px; background: var(--color-base-200); border-color: var(--border-subtle);">
-                <div class="flex items-center gap-1">
+            <div class="preview-toolbar">
+                <div class="preview-title"><i class="fas fa-eye"></i> Preview</div>
+                <div class="preview-arrows flex items-center gap-1">
+                    <button class="preview-nav-btn" disabled aria-label="Voltar" title="Voltar"><i class="fas fa-arrow-left"></i></button>
+                    <button class="preview-nav-btn" disabled aria-label="Avançar" title="Avançar"><i class="fas fa-arrow-right"></i></button>
+                </div>
+                <input class="preview-url" type="text" value="http://localhost:3000/" readonly tabindex="-1" aria-label="Endereço (apenas visual)">
+                <button id="refresh-btn" class="preview-nav-btn" aria-label="Recarregar" title="Recarregar (Ctrl+Enter)"><i class="fas fa-rotate"></i></button>
+                <div class="preview-tools">
                     <button class="device-btn active" data-width="0" title="Desktop"><i class="fas fa-desktop"></i></button>
                     <button class="device-btn" data-width="768" title="Tablet (768px)"><i class="fas fa-tablet-screen-button"></i></button>
                     <button class="device-btn" data-width="375" title="Mobile (375px)"><i class="fas fa-mobile-screen"></i></button>
-                </div>
-                <div class="flex items-center gap-1">
-                    <span id="status-dot" class="w-2 h-2 rounded-full inline-block" style="background: var(--color-success);" aria-hidden="true"></span>
-                    <span id="status-text" class="text-xs mr-2" style="color: color-mix(in oklch, var(--color-base-content) 55%, transparent);" aria-live="polite">Carregando…</span>
-                    <button id="refresh-btn" class="btn-pug btn-pug-ghost btn-pug-icon" aria-label="Recarregar" title="Recarregar (Ctrl+Enter)"><i class="fas fa-rotate"></i></button>
-                    <button id="open-external-btn" class="btn-pug btn-pug-ghost btn-pug-icon" aria-label="Abrir em nova aba" title="Abrir em nova aba"><i class="fas fa-arrow-up-right-from-square"></i></button>
-                    <button id="fullscreen-btn" class="btn-pug btn-pug-ghost btn-pug-icon" aria-label="Tela cheia" title="Tela cheia"><i class="fas fa-expand"></i></button>
+                    <span id="status-dot" class="w-2 h-2 rounded-full inline-block mx-1" style="background: var(--color-success);" aria-hidden="true"></span>
+                    <span id="status-text" class="text-xs hidden md:inline" style="color: color-mix(in oklch, var(--color-base-content) 55%, transparent);" aria-live="polite">Carregando…</span>
+                    <button id="open-external-btn" class="preview-nav-btn" aria-label="Abrir em nova aba" title="Abrir em nova aba"><i class="fas fa-arrow-up-right-from-square"></i></button>
+                    <button id="fullscreen-btn" class="preview-nav-btn" aria-label="Tela cheia" title="Tela cheia"><i class="fas fa-expand"></i></button>
                 </div>
             </div>
             <div id="error-banner" role="alert">
@@ -163,6 +169,11 @@
             </div>
         </div>
     </div>
+
+    <nav id="view-switch" class="view-switch" role="tablist" aria-label="Alternar entre código e preview">
+        <button class="view-switch-btn active" role="tab" aria-selected="true" data-view-btn="editor"><i class="fas fa-code"></i><span>Código</span></button>
+        <button class="view-switch-btn" role="tab" aria-selected="false" data-view-btn="preview"><i class="fas fa-eye"></i><span>Preview</span></button>
+    </nav>
 
     <footer class="flex items-center justify-between px-3 shrink-0 border-t" style="height: 26px; background: var(--color-base-100); border-color: var(--border-subtle); font-family: var(--pug-font-mono); font-size: 11px; color: color-mix(in oklch, var(--color-base-content) 55%, transparent);">
         <div class="flex items-center gap-4">

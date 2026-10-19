@@ -22,29 +22,33 @@
     --color-info: oklch(70% 0.12 230);
 
     --cm-bg: #1c1713;
-    --cm-fg: #f5e8d5;
+    --cm-fg: #f8f8f2;
     --cm-gutter-bg: #1c1713;
     --cm-border: rgba(255,255,255,.05);
     --cm-line-num: #6b5a4c;
     --cm-cursor: #f0a050;
     --cm-selection: rgba(240,160,80,.22);
     --cm-active-line: rgba(255,255,255,.025);
-    --cm-keyword: #f0a050;
-    --cm-def: #ffd9a0;
-    --cm-variable: #f5e8d5;
-    --cm-string: #a8c97a;
-    --cm-number: #e8905a;
-    --cm-comment: #7d6d5f;
-    --cm-tag: #e8845a;
-    --cm-atom: #d4a574;
-    --cm-bracket: #d4b48c;
-    --cm-operator: #e8905a;
-    --cm-punctuation: #d4b48c;
+    /* Monokai */
+    --cm-keyword: #f92672;
+    --cm-def: #a6e22e;
+    --cm-variable: #f8f8f2;
+    --cm-string: #e6db74;
+    --cm-number: #ae81ff;
+    --cm-comment: #75715e;
+    --cm-tag: #f92672;
+    --cm-attribute: #a6e22e;
+    --cm-atom: #ae81ff;
+    --cm-bracket: #f8f8f2;
+    --cm-operator: #f92672;
+    --cm-punctuation: #f8f8f2;
 
     --surface-1: rgba(255,255,255,.03);
     --surface-2: rgba(255,255,255,.06);
     --border-subtle: rgba(255,255,255,.07);
     --border-medium: rgba(255,255,255,.12);
+
+    --file-icon-js: #f4bf75;
 }
 
 [data-theme="light"] {
@@ -63,29 +67,33 @@
     --color-info: oklch(58% 0.12 230);
 
     --cm-bg: #faf6ef;
-    --cm-fg: #2a221c;
+    --cm-fg: #24292f;
     --cm-gutter-bg: #f3ecdf;
     --cm-border: rgba(0,0,0,.07);
     --cm-line-num: #a89886;
     --cm-cursor: #8b5a3c;
     --cm-selection: rgba(139,90,60,.18);
     --cm-active-line: rgba(0,0,0,.025);
-    --cm-keyword: #b35a1f;
-    --cm-def: #6b3a1c;
-    --cm-variable: #2a221c;
-    --cm-string: #4a7c20;
-    --cm-number: #b35a1f;
-    --cm-comment: #998878;
-    --cm-tag: #8b5a3c;
-    --cm-atom: #6b4a2c;
-    --cm-bracket: #7a5a3c;
-    --cm-operator: #b35a1f;
-    --cm-punctuation: #7a5a3c;
+    /* GitHub Light */
+    --cm-keyword: #cf222e;
+    --cm-def: #8250df;
+    --cm-variable: #24292f;
+    --cm-string: #0a3069;
+    --cm-number: #0550ae;
+    --cm-comment: #6e7781;
+    --cm-tag: #116329;
+    --cm-attribute: #0550ae;
+    --cm-atom: #0550ae;
+    --cm-bracket: #24292f;
+    --cm-operator: #cf222e;
+    --cm-punctuation: #24292f;
 
     --surface-1: rgba(0,0,0,.02);
     --surface-2: rgba(0,0,0,.04);
     --border-subtle: rgba(0,0,0,.08);
     --border-medium: rgba(0,0,0,.13);
+
+    --file-icon-js: oklch(58% 0.15 80);
 }
 
 @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }

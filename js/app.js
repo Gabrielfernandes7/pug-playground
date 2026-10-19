@@ -10,7 +10,7 @@ PUG.showCritical = function(errors) {
 };
 
 PUG.boot = async function() {
-    const { CONFIG, FILE_META, PUG_SVG, TEMPLATES,
+    const { CONFIG, FILE_META, PUG_SVG, PUG_LOGO, CSS_SVG, JS_SVG, TEMPLATES,
             $, esc, storage, toast, compileAll } = PUG;
 
     const pugResult = await (window.__pugReady || Promise.resolve({ ok: false, errors: [] }));
@@ -49,12 +49,13 @@ PUG.boot = async function() {
     const consoleClearBtn = $('console-clear-btn');
     const consoleChevron  = $('console-chevron');
 
-    // Brand
-    $('brand-logo').innerHTML = PUG_SVG;
+    // Brand & File icons
+    $('brand-logo').innerHTML = PUG_LOGO;
     document.querySelectorAll('[data-file-icon]').forEach(el => {
         const file = el.parentElement.dataset.file;
         if (file === 'pug') el.innerHTML = PUG_SVG;
-        else el.innerHTML = `<i class="fab ${file === 'css' ? 'fa-css3-alt' : 'fa-js'}" style="color: ${file === 'css' ? '#2965f1' : '#f7df1e'}"></i>`;
+        else if (file === 'css') el.innerHTML = CSS_SVG;
+        else if (file === 'js') el.innerHTML = JS_SVG;
     });
 
     let state = {
@@ -213,6 +214,11 @@ PUG.boot = async function() {
     const emptyStateDoc = () => `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{margin:0;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;background:#faf6ef;color:#998878}</style></head><body><div style="text-align:center"><div style="font-size:32px;margin-bottom:12px">✏️</div><p style="font-size:14px">Comece a digitar Pug ou clique em <strong>Templates</strong>.</p></div></body></html>`;
     const errorStateDoc = () => `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{margin:0;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;background:#faf6ef;color:#998878}</style></head><body><div style="text-align:center"><div style="font-size:32px;margin-bottom:12px">⚠️</div><p style="font-size:14px">Corrija o erro acima para ver o resultado.</p></div></body></html>`;
 
+    // Único ponto que escreve no iframe. srcdoc evita src="index.html", que quebra em file://.
+    function updatePreview(html) {
+        iframe.srcdoc = html;
+    }
+
     function renderAll() {
         clearConsole();
         const source = currentSource();
@@ -220,7 +226,7 @@ PUG.boot = async function() {
         compileTime.textContent = result.elapsed.toFixed(1) + ' ms';
 
         if (result.reason === 'empty') {
-            iframe.srcdoc = emptyStateDoc();
+            updatePreview(emptyStateDoc());
             hideErrorBanner();
             outdatedOverlay.classList.remove('visible');
             setStatus('idle');
@@ -228,13 +234,13 @@ PUG.boot = async function() {
         }
         if (result.ok) {
             lastGoodHTML = result.html;
-            iframe.srcdoc = result.html;
+            updatePreview(result.html);
             hideErrorBanner();
             outdatedOverlay.classList.remove('visible');
             setStatus('success');
         } else {
             if (lastGoodHTML) outdatedOverlay.classList.add('visible');
-            else iframe.srcdoc = errorStateDoc();
+            else updatePreview(errorStateDoc());
             showErrorBanner(result.error);
             setStatus('error');
         }
@@ -395,7 +401,10 @@ PUG.boot = async function() {
         });
     });
 
-    runBtn.addEventListener('click', () => renderAll());
+    runBtn.addEventListener('click', () => {
+        renderAll();
+        if (phoneQuery.matches) setView('preview');
+    });
     refreshBtn.addEventListener('click', () => renderAll());
     openExtBtn.addEventListener('click', openExternal);
     clearBtn.addEventListener('click', () => {
@@ -441,22 +450,45 @@ PUG.boot = async function() {
         resizer.classList.remove('active');
         document.body.style.cursor = '';
         iframe.style.pointerEvents = '';
-        document.removeEventListener('mousemove', onDragMove);
-        document.removeEventListener('mouseup', onDragEnd);
+        document.removeEventListener('pointermove', onDragMove);
+        document.removeEventListener('pointerup', onDragEnd);
+        document.removeEventListener('pointercancel', onDragEnd);
     }
-    resizer.addEventListener('mousedown', (e) => {
+    // Eventos de ponteiro cobrem mouse, caneta e toque
+    resizer.addEventListener('pointerdown', (e) => {
         dragging = true;
         resizer.classList.add('active');
+        resizer.setPointerCapture(e.pointerId);
         document.body.style.cursor = 'col-resize';
         iframe.style.pointerEvents = 'none';
-        document.addEventListener('mousemove', onDragMove);
-        document.addEventListener('mouseup', onDragEnd);
+        document.addEventListener('pointermove', onDragMove);
+        document.addEventListener('pointerup', onDragEnd);
+        document.addEventListener('pointercancel', onDragEnd);
         e.preventDefault();
     });
     resizer.addEventListener('dblclick', () => {
         editorPane.style.width = '50%';
         scheduleRefresh();
     });
+
+    // Celular: alterna entre Código e Preview (um painel por vez)
+    const viewSwitch = $('view-switch');
+    const phoneQuery = window.matchMedia('(max-width: 767px)');
+    function setView(view) {
+        mainArea.dataset.view = view;
+        viewSwitch.querySelectorAll('[data-view-btn]').forEach(btn => {
+            const active = btn.dataset.viewBtn === view;
+            btn.classList.toggle('active', active);
+            btn.setAttribute('aria-selected', String(active));
+        });
+        if (view === 'editor') scheduleRefresh(); // CodeMirror precisa remedir ao reaparecer
+    }
+    viewSwitch.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-view-btn]');
+        if (btn) setView(btn.dataset.viewBtn);
+    });
+    // Ao girar o aparelho ou redimensionar, o editor volta a ser medido
+    phoneQuery.addEventListener('change', () => scheduleRefresh());
 
     window.addEventListener('beforeunload', (e) => {
         const dirty = serializeState() !== lastSavedValue;

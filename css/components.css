@@ -9,7 +9,9 @@
     transition: all .15s;
     user-select: none;
 }
+
 .file-tab:hover { color: color-mix(in oklch, var(--color-base-content) 85%, transparent); }
+
 .file-tab.active {
     background: var(--cm-bg);
     border-top-color: var(--color-primary);
@@ -20,7 +22,40 @@
     align-items: center; justify-content: center;
     flex-shrink: 0;
 }
-.file-tab-icon svg { width: 100%; height: 100%; }
+.file-tab-icon svg,
+.file-tab-icon img { width: 100%; height: 100%; object-fit: contain; }
+
+/*  Preview toolbar  */
+.preview-toolbar {
+    display: flex; align-items: center; gap: 8px;
+    height: 44px; padding: 0 10px; flex-shrink: 0;
+    background: var(--color-base-100);
+    border-bottom: 1px solid var(--border-subtle);
+}
+.preview-title {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 13px; font-weight: 600; white-space: nowrap;
+}
+.preview-title i { color: var(--color-primary); }
+.preview-nav-btn {
+    width: 28px; height: 28px; flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 6px; cursor: pointer;
+    color: color-mix(in oklch, var(--color-base-content) 75%, transparent);
+    transition: background .15s;
+}
+.preview-nav-btn:hover:not(:disabled) { background: var(--surface-2); color: var(--color-base-content); }
+.preview-nav-btn:disabled { opacity: .35; cursor: default; }
+.preview-url {
+    flex: 1; min-width: 0; height: 28px; padding: 0 10px;
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    background: var(--surface-2);
+    color: var(--color-base-content);
+    font-family: var(--pug-font-mono); font-size: 12px;
+    outline: none;
+}
+.preview-tools { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
 
 /*  Device buttons  */
 .device-btn {
@@ -147,7 +182,8 @@
     display: flex; align-items: center; justify-content: center;
     flex-shrink: 0;
 }
-.brand-logo svg { width: 100%; height: 100%; }
+.brand-logo svg,
+.brand-logo img { width: 100%; height: 100%; object-fit: contain; }
 
 /* Ícone do Pug: em dark mode, os contornos escuros do SVG (#4e342e, #3e2723)
    somem no fundo marrom do tema. Fundo claro devolve o contraste. */
@@ -157,10 +193,6 @@
     box-shadow:
         0 2px 10px rgba(240, 160, 80, .25),
         inset 0 1px 0 rgba(255, 255, 255, .5);
-}
-[data-theme="dark"] .file-tab[data-file="pug"] .file-tab-icon {
-    background: #faf6ef;
-    border-radius: 3px;
 }
 
 /*  Toast  */
