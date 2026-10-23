@@ -121,6 +121,24 @@ PUG.boot = async function() {
     }
     applyTheme(currentTheme);
 
+    // Tema do editor e do console: sobrescreve as variáveis --cm-* no <html>.
+    // Inline vence a regra [data-theme] de tokens.css; 'auto' remove o override.
+    const editorThemeSelect = $('editor-theme');
+    const cmVar = (key) => '--cm-' + key.replace(/[A-Z]/g, c => '-' + c.toLowerCase());
+    function applyEditorTheme(id) {
+        const theme = PUG.EDITOR_THEMES.find(t => t.id === id) || PUG.EDITOR_THEMES[0];
+        const style = document.documentElement.style;
+        PUG.EDITOR_COLOR_KEYS.forEach(key => style.removeProperty(cmVar(key)));
+        if (theme.colors) {
+            Object.entries(theme.colors).forEach(([key, value]) => style.setProperty(cmVar(key), value));
+        }
+        editorThemeSelect.value = theme.id;
+        storage.set(CONFIG.EDITOR_THEME_KEY, theme.id);
+    }
+    PUG.EDITOR_THEMES.forEach(t => editorThemeSelect.add(new Option(t.label, t.id)));
+    applyEditorTheme(storage.get(CONFIG.EDITOR_THEME_KEY, 'auto'));
+    editorThemeSelect.addEventListener('change', () => applyEditorTheme(editorThemeSelect.value));
+
     const docs = {
         pug: CodeMirror.Doc(state.pug, FILE_META.pug.mode),
         css: CodeMirror.Doc(state.css, FILE_META.css.mode),
@@ -284,6 +302,8 @@ PUG.boot = async function() {
         const time = new Date().toLocaleTimeString('pt-BR', { hour12: false });
         line.innerHTML = `<span class="console-time">${time}</span><span class="console-msg">${esc(args.join(' '))}</span>`;
         consoleOutput.appendChild(line);
+        // Limite: um loop de console.log não pode crescer o DOM sem fim
+        while (consoleOutput.childElementCount > CONFIG.MAX_CONSOLE_LINES) consoleOutput.firstElementChild.remove();
         consoleOutput.scrollTop = consoleOutput.scrollHeight;
         if (type === 'error' || type === 'warn') {
             consoleCount++;
@@ -295,9 +315,11 @@ PUG.boot = async function() {
             }
         }
     }
+    // O iframe é sandbox sem allow-same-origin: a origem dele é "null", então a origem não serve
+    // de filtro. Identifica-se a mensagem pela janela de origem, que é o próprio iframe.
     window.addEventListener('message', (e) => {
         if (!e.data || e.data.__pg !== true) return;
-        if (e.origin !== window.location.origin) return;
+        if (e.source !== iframe.contentWindow) return;
         appendConsole(e.data.type, e.data.args || []);
     });
     consoleHeader.addEventListener('click', (e) => {
@@ -322,17 +344,30 @@ PUG.boot = async function() {
     function openExternal() {
         if (!lastGoodHTML) { toast('Nada para abrir — compile primeiro'); return; }
         const blob = new Blob([lastGoodHTML], { type: 'text/html' });
-        window.open(URL.createObjectURL(blob), '_blank');
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        // A aba nova já carregou o blob; sem revogar, cada clique deixa um blob de até 5MB na memória
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
     }
 
     function importFiles(files) {
         if (!files || !files.length) return;
-        let imported = 0;
-        const pending = Array.from(files);
-        pending.forEach(file => {
+        // Filtra antes de ler: a contagem de concluídos precisa bater com o número de leituras
+        const pending = [];
+        Array.from(files).forEach(file => {
             const ext = (file.name.split('.').pop() || '').toLowerCase();
             const target = (ext === 'pug' || ext === 'jade') ? 'pug' : (ext === 'css') ? 'css' : (ext === 'js') ? 'js' : null;
             if (!target) return;
+            if (file.size > CONFIG.MAX_IMPORT_BYTES) {
+                toast(`${file.name} passa de ${CONFIG.MAX_IMPORT_BYTES / 1024 / 1024}MB e não foi importado`);
+                return;
+            }
+            pending.push({ file, target });
+        });
+        if (!pending.length) return;
+
+        let imported = 0;
+        pending.forEach(({ file, target }) => {
             const reader = new FileReader();
             reader.onload = (e) => {
                 docs[target].setValue(e.target.result);
@@ -378,6 +413,18 @@ PUG.boot = async function() {
     });
 
     themeBtn.addEventListener('click', () => applyTheme(currentTheme === 'dark' ? 'light' : 'dark'));
+
+    $('converter-btn').addEventListener('click', () => PUG.openConverter({
+        getPug: () => docs.pug.getValue(),
+        applyPug(source) {
+            if (source !== docs.pug.getValue() && docs.pug.getValue().trim()
+                && !confirm('Substituir o index.pug atual pelo código convertido?')) return false;
+            docs.pug.setValue(source);
+            if (activeFile !== 'pug') switchTab('pug');
+            renderAll();
+            toast('index.pug atualizado');
+        },
+    }));
 
     document.querySelectorAll('.device-btn').forEach(btn => {
         btn.addEventListener('click', () => {

@@ -9,7 +9,7 @@ Abra `index.html` no navegador, ou sirva a pasta com qualquer servidor estático
 ```
 index.html          layout (header, editor, preview, console)
 css/                tokens (tema claro/escuro), layout, editor, componentes, responsivo
-js/                 config (conteúdo inicial), utils, compile, editor, app (orquestrador)
+js/                 config (conteúdo e temas), utils, compile, editor, html-to-pug, converter, app (orquestrador)
 assets/             logo e ícones
 ```
 
@@ -36,6 +36,20 @@ O playground abre com o conteúdo de `PUG.STARTER`, em `js/config.js`. Para muda
 | `Ctrl/Cmd+Shift+V` | Colar código e renderizar |
 | Duplo clique no divisor | Volta para 50/50 |
 
+## Temas do editor
+
+O seletor no cabeçalho troca as cores do editor e do console (Monokai, Darcula, Dracula, One Dark, Solarized Dark, GitHub Light). A lista fica em `PUG.EDITOR_THEMES`, em `js/config.js`. "Padrão do tema" usa as cores de `css/tokens.css`. A escolha é salva no navegador.
+
+## Conversor Pug ⇄ HTML
+
+O botão **Converter** abre um diálogo com `index.pug` à esquerda e `index.html` à direita.
+
+- **Pug → HTML** usa o mesmo `pug.render` do preview. Como a saída é um HTML completo, ela pode ser colada direto num `index.html`.
+- **HTML → Pug** usa `PUG.htmlToPug` (`js/html-to-pug.js`), que roda com `DOMParser` e não executa scripts nem carrega recursos.
+- **Usar no editor** substitui o `index.pug` do playground, depois de pedir confirmação.
+
+Os dois editores são criados ao abrir e destruídos ao fechar.
+
 ## Responsivo
 
 - **Celular (< 768px):** um painel por vez, com a barra Código | Preview. O Run leva ao preview.
@@ -53,7 +67,6 @@ As regras ficam em `css/responsive.css`.
 
 ## Roadmap
 
-- **P1:** validar `event.source` nas mensagens do iframe (hoje só se checa `__pg`).
 - **P2:** CSP mínima no documento pai.
 - **P2:** testes (Vitest) para `compileAll` e `buildFullDoc`.
 
