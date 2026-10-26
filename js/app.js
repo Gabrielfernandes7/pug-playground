@@ -35,7 +35,6 @@ PUG.boot = async function() {
     const fullscreenBtn   = $('fullscreen-btn');
     const importBtn       = $('import-btn');
     const importInput     = $('import-input');
-    const shareBtn        = $('share-btn');
     const themeBtn        = $('theme-btn');
     const themeIcon       = $('theme-icon');
     const statusText      = $('status-text');
@@ -71,11 +70,7 @@ PUG.boot = async function() {
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     let currentTheme = storage.get(CONFIG.THEME_KEY) || (prefersDark ? 'dark' : 'light');
 
-    function encodeState(s) {
-        const json = JSON.stringify({ p: s.pug, c: s.css, j: s.js });
-        if (typeof LZString !== 'undefined') return LZString.compressToEncodedURIComponent(json);
-        return btoa(unescape(encodeURIComponent(json)));
-    }
+    // Lê links #code= antigos (gerados pelo antigo botão Share). Não há mais envio de links.
     function decodeState(str) {
         try {
             let json;
@@ -133,11 +128,21 @@ PUG.boot = async function() {
             Object.entries(theme.colors).forEach(([key, value]) => style.setProperty(cmVar(key), value));
         }
         editorThemeSelect.value = theme.id;
-        storage.set(CONFIG.EDITOR_THEME_KEY, theme.id);
     }
-    PUG.EDITOR_THEMES.forEach(t => editorThemeSelect.add(new Option(t.label, t.id)));
-    applyEditorTheme(storage.get(CONFIG.EDITOR_THEME_KEY, 'auto'));
-    editorThemeSelect.addEventListener('change', () => applyEditorTheme(editorThemeSelect.value));
+    // Só mostra os temas do modo ativo. A escolha salva não é apagada: se ela não couber no
+    // modo atual, aplica 'auto' e volta a valer quando o modo correspondente retornar.
+    function syncEditorThemes() {
+        const saved = storage.get(CONFIG.EDITOR_THEME_KEY, 'auto');
+        const allowed = PUG.EDITOR_THEMES.filter(t => !t.mode || t.mode === currentTheme);
+        editorThemeSelect.innerHTML = '';
+        allowed.forEach(t => editorThemeSelect.add(new Option(t.label, t.id)));
+        applyEditorTheme(allowed.some(t => t.id === saved) ? saved : 'auto');
+    }
+    syncEditorThemes();
+    editorThemeSelect.addEventListener('change', () => {
+        storage.set(CONFIG.EDITOR_THEME_KEY, editorThemeSelect.value);
+        applyEditorTheme(editorThemeSelect.value);
+    });
 
     const docs = {
         pug: CodeMirror.Doc(state.pug, FILE_META.pug.mode),
@@ -401,18 +406,10 @@ PUG.boot = async function() {
         } catch { toast('Não foi possível ler o clipboard'); }
     }
 
-    shareBtn.addEventListener('click', async () => {
-        const encoded = encodeState(currentSource());
-        const url = location.origin + location.pathname + '#code=' + encoded;
-        try {
-            await navigator.clipboard.writeText(url);
-            toast('Link copiado! Cole no navegador para abrir.');
-        } catch {
-            prompt('Copie o link:', url);
-        }
+    themeBtn.addEventListener('click', () => {
+        applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
+        syncEditorThemes();
     });
-
-    themeBtn.addEventListener('click', () => applyTheme(currentTheme === 'dark' ? 'light' : 'dark'));
 
     $('converter-btn').addEventListener('click', () => PUG.openConverter({
         getPug: () => docs.pug.getValue(),
@@ -540,5 +537,6 @@ PUG.boot = async function() {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('critical-reload').addEventListener('click', () => location.reload());
     PUG.boot().catch(err => PUG.showCritical([{ url: 'boot', reason: err.message || String(err) }]));
 });

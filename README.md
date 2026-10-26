@@ -38,7 +38,7 @@ O playground abre com o conteúdo de `PUG.STARTER`, em `js/config.js`. Para muda
 
 ## Temas do editor
 
-O seletor no cabeçalho troca as cores do editor e do console (Monokai, Darcula, Dracula, One Dark, Solarized Dark, GitHub Light). A lista fica em `PUG.EDITOR_THEMES`, em `js/config.js`. "Padrão do tema" usa as cores de `css/tokens.css`. A escolha é salva no navegador.
+O seletor no cabeçalho troca as cores do editor e do console. Temas escuros (Monokai, Darcula, Dracula, One Dark, Solarized Dark) aparecem só no tema escuro da página, e o claro (GitHub Light) só no claro. "Padrão do tema" usa as cores de `css/tokens.css` nos dois modos. A lista fica em `PUG.EDITOR_THEMES`, em `js/config.js`, com o campo `mode`. A escolha é salva no navegador e volta a valer quando o modo correspondente retorna.
 
 ## Conversor Pug ⇄ HTML
 

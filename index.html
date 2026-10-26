@@ -2,6 +2,10 @@
 <html lang="pt-BR" data-theme="dark">
 <head>
     <meta charset="UTF-8">
+    <!-- 'unsafe-inline' e 'unsafe-eval' são obrigatórios: o preview é srcdoc (herda esta CSP),
+         o Pug compila com new Function e o loader/style attributes são inline.
+         O ganho real é a allowlist de origens externas. -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://esm.sh https://cdn.jsdelivr.net https://unpkg.com https://cdn.skypack.dev https://bundle.run https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' data: https://cdnjs.cloudflare.com; img-src 'self' data: blob: https:; connect-src 'self' https:; object-src 'none'; base-uri 'self'">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Pug Render - Playground</title>
     <link rel="icon" type="image/svg+xml" href="assets/pug-logo.svg">
@@ -85,10 +89,6 @@
         <button id="import-btn" class="btn-pug btn-pug-ghost" aria-label="Importar arquivo" title="Importar arquivo (.pug, .css, .js)">
             <i class="fas fa-file-import"></i>
             <span class="hidden md:inline">Importar</span>
-        </button>
-        <button id="share-btn" class="btn-pug btn-pug-ghost" aria-label="Compartilhar por link" title="Compartilhar por link">
-            <i class="fas fa-share-nodes"></i>
-            <span class="hidden md:inline">Share</span>
         </button>
         <button id="run-btn" class="btn-pug btn-pug-primary" title="Ctrl+Enter">
             <i class="fas fa-play"></i> Run
@@ -204,7 +204,7 @@
             <li>Teste em outro navegador ou outra rede</li>
             <li>Libere os domínios: <code>esm.sh</code>, <code>cdn.jsdelivr.net</code>, <code>unpkg.com</code>, <code>cdn.skypack.dev</code>, <code>bundle.run</code>, <code>cdnjs.cloudflare.com</code></li>
         </ul>
-        <button onclick="location.reload()" class="btn-pug btn-pug-primary" style="margin-top: 20px;">
+        <button id="critical-reload" class="btn-pug btn-pug-primary" style="margin-top: 20px;">
             <i class="fas fa-rotate-right"></i> Tentar novamente
         </button>
     </div>
