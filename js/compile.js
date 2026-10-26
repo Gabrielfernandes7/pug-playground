@@ -2,6 +2,21 @@ window.PUG = window.PUG || {};
 
 PUG.CONSOLE_CAPTURE_SCRIPT = `<script>
 (function(){
+  // O iframe é sandbox sem allow-same-origin: acessar localStorage/sessionStorage lança
+  // "The operation is insecure" (ex.: MathJax). Troca por um armazenamento em memória.
+  ['localStorage', 'sessionStorage'].forEach(function(name){
+    try { void window[name]; return; } catch(e){}
+    var mem = {};
+    var fake = {
+      getItem: function(k){ return Object.prototype.hasOwnProperty.call(mem, k) ? mem[k] : null; },
+      setItem: function(k, v){ mem[k] = String(v); },
+      removeItem: function(k){ delete mem[k]; },
+      clear: function(){ mem = {}; },
+      key: function(i){ return Object.keys(mem)[i] || null; },
+      get length(){ return Object.keys(mem).length; }
+    };
+    try { Object.defineProperty(window, name, { value: fake, configurable: true }); } catch(e){}
+  });
   var parentOrigin = '*';
   window.addEventListener('message', function(e){
     if (e.data && e.data.__pgInit === true) {

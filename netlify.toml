@@ -9,18 +9,19 @@
   [headers.values]
     Cache-Control = "public, max-age=0, must-revalidate"
 
-# CSS, JS e imagens: cache de 1 dia. Visitas repetidas não baixam esses arquivos de novo,
-# o que reduz requisições no Netlify. Após um deploy, quem já visitou pode ver a versão
-# antiga por até 1 dia (ou dar Ctrl+Shift+R).
+# CSS e JS são revalidados a cada carregamento. Com cache de 1 dia, o navegador podia
+# misturar um index.html novo com um app.js antigo (ex.: "null is not an object
+# (evaluating 'shareBtn.addEventListener')"). Revalidar usa ETag e responde 304 quando
+# nada mudou, então o custo continua baixo.
 [[headers]]
   for = "/css/*"
   [headers.values]
-    Cache-Control = "public, max-age=86400"
+    Cache-Control = "public, max-age=0, must-revalidate"
 
 [[headers]]
   for = "/js/*"
   [headers.values]
-    Cache-Control = "public, max-age=86400"
+    Cache-Control = "public, max-age=0, must-revalidate"
 
 [[headers]]
   for = "/assets/*"

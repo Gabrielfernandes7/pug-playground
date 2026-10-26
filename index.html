@@ -2,10 +2,6 @@
 <html lang="pt-BR" data-theme="dark">
 <head>
     <meta charset="UTF-8">
-    <!-- 'unsafe-inline' e 'unsafe-eval' são obrigatórios: o preview é srcdoc (herda esta CSP),
-         o Pug compila com new Function e o loader/style attributes são inline.
-         O ganho real é a allowlist de origens externas. -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://esm.sh https://cdn.jsdelivr.net https://unpkg.com https://cdn.skypack.dev https://bundle.run https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' data: https://cdnjs.cloudflare.com; img-src 'self' data: blob: https:; connect-src 'self' https:; object-src 'none'; base-uri 'self'">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Pug Render - Playground</title>
     <link rel="icon" type="image/svg+xml" href="assets/pug-logo.svg">
@@ -27,11 +23,11 @@
     <script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
 
     <!-- CSS próprio (ordem importa: tokens → layout → codemirror → components) -->
-    <link rel="stylesheet" href="css/tokens.css">
-    <link rel="stylesheet" href="css/layout.css">
-    <link rel="stylesheet" href="css/codemirror.css">
-    <link rel="stylesheet" href="css/components.css">
-    <link rel="stylesheet" href="css/responsive.css">
+    <link rel="stylesheet" href="css/tokens.css?v=2">
+    <link rel="stylesheet" href="css/layout.css?v=2">
+    <link rel="stylesheet" href="css/codemirror.css?v=2">
+    <link rel="stylesheet" href="css/components.css?v=2">
+    <link rel="stylesheet" href="css/responsive.css?v=2">
 
     <!-- Loader do Pug (inline: roda em paralelo com o resto) -->
     <script>
@@ -247,12 +243,12 @@
     </div>
 
     <!-- JS próprio (ordem importa: config → utils → compile → editor → html-to-pug → converter → app) -->
-    <script src="js/config.js"></script>
-    <script src="js/utils.js"></script>
-    <script src="js/compile.js"></script>
-    <script src="js/editor.js"></script>
-    <script src="js/html-to-pug.js"></script>
-    <script src="js/converter.js"></script>
-    <script src="js/app.js"></script>
+    <script src="js/config.js?v=2"></script>
+    <script src="js/utils.js?v=2"></script>
+    <script src="js/compile.js?v=3"></script>
+    <script src="js/editor.js?v=2"></script>
+    <script src="js/html-to-pug.js?v=2"></script>
+    <script src="js/converter.js?v=2"></script>
+    <script src="js/app.js?v=2"></script>
 </body>
 </html>
