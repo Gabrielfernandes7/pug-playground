@@ -21,8 +21,8 @@
 /* ---------- Celular ---------- */
 @media (max-width: 767px) {
     body { height: 100vh; height: 100dvh; }
-    body > header { height: 52px !important; }
-    body > footer { display: none; }
+    #app-root > header { height: 52px !important; }
+    #app-root > footer { display: none; }
 
     #main-area { min-height: 0; }
     #editor-pane,

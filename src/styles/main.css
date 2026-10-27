@@ -1,0 +1,10 @@
+/* Ordem importa: Tailwind e Font Awesome primeiro; depois os estilos próprios (tokens → layout → editor → componentes → responsivo) */
+@import 'tailwindcss';
+@import '@fortawesome/fontawesome-free/css/all.min.css';
+@import '../../css/tokens.css';
+@import '../../css/layout.css';
+@import '../../css/codemirror.css';
+@import '../../css/components.css';
+@import '../../css/responsive.css';
+
+@plugin 'daisyui';
