@@ -1,28 +1,20 @@
-window.PUG = window.PUG || {};
+// Temas do editor e do console. Cores são sobrescritas nas variáveis --cm-* do <html>.
+export interface EditorTheme {
+  id: string;
+  label: string;
+  // Modo da página em que o tema aparece; null vale nos dois
+  mode: 'dark' | 'light' | null;
+  colors: Record<string, string> | null;
+}
 
-PUG.CONFIG = Object.freeze({
-    DEBOUNCE_MS: 400,
-    SAVE_MS: 400,
-    MIN_PANE_WIDTH: 280,
-    MAX_OUTPUT_BYTES: 5 * 1024 * 1024,
-    STORAGE_KEY: 'pug-playground:state:v2',
-    THEME_KEY: 'pug-playground:theme',
-    EDITOR_THEME_KEY: 'pug-playground:editor-theme',
-    MAX_CONSOLE_LINES: 500,
-    MAX_IMPORT_BYTES: 2 * 1024 * 1024,
-    FA_CDN: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css',
-});
-
-// Variáveis --cm-* que um tema de editor controla (além do próprio console, que as reutiliza)
-PUG.EDITOR_COLOR_KEYS = Object.freeze([
+export const EDITOR_COLOR_KEYS: readonly string[] = [
     'bg', 'fg', 'gutterBg', 'border', 'lineNum', 'cursor', 'selection', 'activeLine',
     'keyword', 'def', 'variable', 'string', 'number', 'comment', 'tag', 'attribute',
     'atom', 'bracket', 'operator', 'punctuation',
-]);
+];
 
-// 'auto' remove os overrides e volta às cores de tokens.css (escuro = Monokai, claro = claro).
-// 'mode' diz em qual tema da página o tema do editor aparece: temas claros só no claro, escuros só no escuro.
-PUG.EDITOR_THEMES = Object.freeze([
+export const EDITOR_THEMES: readonly EditorTheme[] = [
+
     { id: 'auto', label: 'Padrão do tema', mode: null, colors: null },
     { id: 'monokai', label: 'Monokai', mode: 'dark', colors: {
         bg: '#272822', fg: '#f8f8f2', gutterBg: '#272822', border: 'rgba(255,255,255,.06)',
@@ -66,22 +58,4 @@ PUG.EDITOR_THEMES = Object.freeze([
         comment: '#6a737d', tag: '#22863a', attribute: '#005cc5', atom: '#005cc5',
         bracket: '#24292e', operator: '#d73a49', punctuation: '#24292e',
     } },
-]);
-
-PUG.FILES = ['pug', 'css', 'js'];
-PUG.FILE_META = {
-    pug: { label: 'index.pug',  mode: 'pug',        icon: 'assets/pug-logo.svg' },
-    css: { label: 'styles.css', mode: 'css',        icon: 'assets/icons/css.svg' },
-    js:  { label: 'script.js',  mode: 'javascript', icon: 'assets/icons/js.svg' },
-};
-
-// Conteúdo inicial do playground: as três abas começam vazias
-PUG.STARTER = Object.freeze({
-    pug: '',
-    css: '',
-    js: '',
-});
-
-PUG.PUG_LOGO = `<img src="assets/pug-logo.svg" alt="" aria-hidden="true">`;
-
-
+];

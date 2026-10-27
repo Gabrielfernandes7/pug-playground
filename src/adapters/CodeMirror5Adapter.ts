@@ -1,4 +1,8 @@
+import CodeMirror from '../editor/codemirror';
 import type { EditorDocument, EditorKeymap, EditorLanguage, IEditorAdapter, ITextEditor } from '../ports/editor';
+
+type Editor = CodeMirror.Editor;
+type Doc = CodeMirror.Doc;
 
 // Opções compartilhadas pelo editor principal e pelo diálogo do conversor
 const BASE_OPTIONS = {
@@ -13,16 +17,16 @@ const BASE_OPTIONS = {
 
 // Documento do CodeMirror embrulhado: a porta não expõe o tipo do CodeMirror
 class CM5Document implements EditorDocument {
-  constructor(readonly native: CodeMirrorDoc) {}
+  constructor(readonly native: Doc) {}
   getValue(): string { return this.native.getValue(); }
   setValue(text: string): void { this.native.setValue(text); }
 }
 
 export class CodeMirror5Adapter implements IEditorAdapter {
-  private readonly editor: CodeMirrorEditor;
+  private readonly editor: Editor;
 
   constructor(host: HTMLElement, keymap: EditorKeymap) {
-    const extraKeys: Record<string, unknown> = { 'Ctrl-Space': 'autocomplete' };
+    const extraKeys: CodeMirror.KeyMap = { 'Ctrl-Space': 'autocomplete' };
     Object.entries(keymap).forEach(([key, action]) => { extraKeys[key] = action; });
     this.editor = CodeMirror(host, { ...BASE_OPTIONS, value: '', mode: 'pug', extraKeys });
   }
@@ -38,7 +42,7 @@ export class CodeMirror5Adapter implements IEditorAdapter {
   focus(): void { this.editor.focus(); }
   refresh(): void { this.editor.refresh(); }
 
-  cursor() { return this.editor.getCursor(); }
+  cursor(): { line: number; ch: number } { return this.editor.getCursor(); }
   lineCount(): number { return this.editor.lineCount(); }
 
   onChange(handler: () => void): void { this.editor.on('change', handler); }
@@ -57,8 +61,8 @@ export class CodeMirror5Adapter implements IEditorAdapter {
   }
 }
 
-// Editor simples montado num elemento: usado pelo conversor Pug ⇄ HTML
-// Usa textarea + fromTextArea: toTextArea() é o único jeito de desmontar sem vazar listeners globais
+// Editor simples para o diálogo do conversor. textarea + fromTextArea: toTextArea() é o único
+// jeito de desmontar sem vazar listeners globais.
 export function createTextEditor(host: HTMLElement, mode: EditorLanguage): ITextEditor {
   const textarea = document.createElement('textarea');
   host.appendChild(textarea);

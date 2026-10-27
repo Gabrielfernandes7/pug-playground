@@ -6,35 +6,42 @@ Playground de Pug: edite `index.pug`, `styles.css` e `script.js` e veja o result
 
 ```sh
 bun install
-bun run dev        # servidor de desenvolvimento (Vite)
-bun run build      # gera dist/ (é o que o Netlify publica)
-bun run test       # testes do core (Vitest)
-bun run typecheck  # TypeScript em modo estrito
+bun run dev            # servidor de desenvolvimento (Vite), em http://localhost:5173
+bun run build          # gera dist/ (é o que o Netlify publica)
+bun run preview        # serve o dist/ gerado
+bun run test           # testes (Vitest)
+bun run test:coverage  # testes com cobertura do núcleo (meta: 80%)
+bun run typecheck      # vue-tsc em modo estrito
 ```
 
-Testado com Bun 1.4.4. O Pug vem empacotado a partir do registro npm; não há mais CDN para ele.
+Testado com Bun 1.4.4. Tudo vem do registro npm: não há mais CDN para o Pug, o CodeMirror, o Tailwind, o DaisyUI ou a Font Awesome.
 
 ## Estrutura
 
 ```
-index.html          layout (header, editor, preview, console)
+index.html          casca que monta o app (#app)
+public/assets/      logo e ícones das abas (copiados como estão)
 src/
-  bridge.ts         ponte temporária: liga o core e as portas ao legado em js/ (window.PUG)
-  core/             lógica pura: compiler (PugCompilerService), converter (HtmlToPugConverter), document
+  main.ts           cria o app Vue e o Pinia
+  App.vue           layout: cabeçalho, editor, divisor, preview, rodapé e diálogo do conversor
+  components/       AppHeader, EditorPane, CodeEditor, PreviewPane, ConsolePanel, ConverterModal
+  app/              estado e casos de uso: workspace (código, compilação, console),
+                    preferences (tema), services (composição), logic (funções puras), editorThemes
+  core/             lógica pura, sem navegador: compiler, converter, document
   ports/            interfaces: IStorageService, ISandboxRunner, IEditorAdapter
   adapters/         implementações: LocalStorageService, IframeSandboxRunner, CodeMirror5Adapter
+  editor/           CodeMirror local e o modo de syntax do Pug
   shims/            process mínimo para o pug rodar no navegador
-tests/              testes do core e dos adaptadores
+  styles/           entrada do CSS (Tailwind, DaisyUI, Font Awesome e os estilos próprios)
 css/                tokens (tema claro/escuro), layout, editor, componentes, responsivo
-js/                 config, utils, editor, converter, app (legado, em migração)
-assets/             logo e ícones
+tests/              testes do núcleo, dos adaptadores e da lógica do app
 ```
 
 ## Fluxo
 
-`editor` → `PUG.compileAll(source)` (core) → `sandbox.render(html)` → `iframe.srcdoc`
+`CodeEditor` → `workspace.setSource` → (debounce) `workspace.compileNow` → `compiler.compile` (núcleo) → `previewHtml` → `IframeSandboxRunner.render` → `iframe.srcdoc`
 
-Essa é a única escrita no iframe, feita pelo `IframeSandboxRunner`. Erros de compilação mantêm o último preview válido e mostram o banner.
+O Pug é carregado sob demanda: só quando há código para compilar. Erros de compilação mantêm o último preview válido e mostram o banner.
 
 ## Segurança
 
@@ -42,7 +49,7 @@ O iframe usa `sandbox="allow-scripts allow-popups allow-forms"`. **Não** adicio
 
 ## Conteúdo inicial
 
-O playground abre com o conteúdo de `PUG.STARTER`, em `js/config.js`. Para mudar o ponto de partida, edite esse objeto.
+As três abas começam vazias. O ponto de partida fica em `STARTER`, em `src/config.ts`.
 
 ## Atalhos
 
@@ -55,7 +62,7 @@ O playground abre com o conteúdo de `PUG.STARTER`, em `js/config.js`. Para muda
 
 ## Temas do editor
 
-O seletor no cabeçalho troca as cores do editor e do console. Temas escuros (Monokai, Darcula, Dracula, One Dark, Solarized Dark) aparecem só no tema escuro da página, e o claro (GitHub Light) só no claro. "Padrão do tema" usa as cores de `css/tokens.css` nos dois modos. A lista fica em `PUG.EDITOR_THEMES`, em `js/config.js`, com o campo `mode`. A escolha é salva no navegador e volta a valer quando o modo correspondente retorna.
+O seletor no cabeçalho troca as cores do editor e do console. Temas escuros (Monokai, Darcula, Dracula, One Dark, Solarized Dark) aparecem só no tema escuro da página, e o claro (GitHub Light) só no claro. "Padrão do tema" usa as cores de `css/tokens.css` nos dois modos. A lista fica em `src/app/editorThemes.ts`, com o campo `mode`. A escolha é salva no navegador e volta a valer quando o modo correspondente retorna.
 
 ## Conversor Pug ⇄ HTML
 
@@ -77,15 +84,15 @@ As regras ficam em `css/responsive.css`.
 
 ## Solução de problemas
 
-- **"Não carregou do CDN" / editor ausente:** o CodeMirror, o Tailwind, o DaisyUI e a Font Awesome ainda vêm de CDN. Libere `cdnjs.cloudflare.com` e `cdn.jsdelivr.net`.
+- **Editor ou estilos não aparecem:** verifique se o build foi feito (`bun run build`) e se o servidor está servindo `dist/`.
+- **"Falha ao inicializar":** o Pug não carregou (normalmente um chunk que não baixou). Recarregue a página.
 - **"salvar: off":** `localStorage` está bloqueado (por exemplo, modo privado). O aviso de fechar a página continua ativo.
 - **Preview em branco:** abra o Console do DevTools no contexto do iframe (seletor de contexto).
-- **Algum recurso não carrega ao abrir por `file://`:** sirva a pasta por HTTP (por exemplo, `python3 -m http.server`).
 
-## Roadmap
+## Mudanças da Fase 3
 
-- **P2:** CSP mínima no documento pai.
-- **Fase 3 pendente:** Vue 3 ou modularização do `app.js`, remoção de `js/` e de `window.PUG`, e CDNs substituídos por dependências locais.
+- Links antigos com `#code=` (compartilhamento por URL comprimida) não são mais lidos. Esse recurso dependia do lz-string, que foi removido.
+- Os CDNs de CodeMirror, Tailwind, DaisyUI e Font Awesome viraram dependências locais.
 
 ## Referência
 

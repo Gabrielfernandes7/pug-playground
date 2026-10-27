@@ -11,8 +11,8 @@ export interface EditorCursor {
   ch: number;
 }
 
-// Atalhos: a função devolve false para cancelar o comportamento padrão do editor
-export type EditorKeymap = Record<string, () => boolean | void>;
+// Atalhos: o editor considera a tecla tratada, então a ação não precisa devolver nada
+export type EditorKeymap = Record<string, () => void>;
 
 // Editor principal: um por tela, troca de documento entre abas
 export interface IEditorAdapter {
