@@ -29,42 +29,6 @@
     <link rel="stylesheet" href="css/components.css?v=2">
     <link rel="stylesheet" href="css/responsive.css?v=2">
 
-    <!-- Loader do Pug (inline: roda em paralelo com o resto) -->
-    <script>
-    window.__pugReady = (async () => {
-      const sources = [
-        { type: 'esm', url: 'https://esm.sh/pug@3.0.2' },
-        { type: 'esm', url: 'https://cdn.jsdelivr.net/npm/pug@3.0.2/+esm' },
-        { type: 'esm', url: 'https://unpkg.com/pug@3.0.2/+esm' },
-        { type: 'esm', url: 'https://cdn.skypack.dev/pug@3.0.2' },
-        { type: 'umd', url: 'https://bundle.run/pug@3.0.2' },
-      ];
-      const errors = [];
-      // Sem timeout, um CDN pendurado bloqueia a cadeia inteira de fallbacks.
-      const TIMEOUT_MS = 6000;
-      const withTimeout = (p) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('demorou demais')), TIMEOUT_MS))]);
-      for (const src of sources) {
-        try {
-          if (src.type === 'esm') {
-            const mod = await withTimeout(import(src.url));
-            const p = mod.default || mod;
-            if (p && typeof p.render === 'function') { window.pug = p; return { ok: true, source: src.url, errors }; }
-            errors.push({ url: src.url, reason: 'sem .render()' });
-          } else {
-            await withTimeout(new Promise((res, rej) => {
-              const s = document.createElement('script');
-              s.src = src.url; s.onload = res;
-              s.onerror = () => rej(new Error('bloqueado/404'));
-              document.head.appendChild(s);
-            }));
-            if (window.pug && window.pug.render) return { ok: true, source: src.url, errors };
-            errors.push({ url: src.url, reason: 'window.pug ausente' });
-          }
-        } catch (e) { errors.push({ url: src.url, reason: e.message || String(e) }); }
-      }
-      return { ok: false, errors };
-    })();
-    </script>
 </head>
 <body class="flex flex-col bg-base-300 text-base-content">
 
@@ -245,10 +209,9 @@
     <!-- JS próprio (ordem importa: config → utils → compile → editor → html-to-pug → converter → app) -->
     <script src="js/config.js?v=2"></script>
     <script src="js/utils.js?v=2"></script>
-    <script src="js/compile.js?v=3"></script>
     <script src="js/editor.js?v=2"></script>
-    <script src="js/html-to-pug.js?v=2"></script>
     <script src="js/converter.js?v=2"></script>
+    <script type="module" src="/src/bridge.ts"></script>
     <script src="js/app.js?v=2"></script>
 </body>
 </html>

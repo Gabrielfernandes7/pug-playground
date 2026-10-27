@@ -1,7 +1,7 @@
 window.PUG = window.PUG || {};
 
 // Diálogo Pug ⇄ HTML. Os editores existem só enquanto o diálogo está aberto:
-// toTextArea() no fechamento remove os listeners globais do CodeMirror.
+// destroy() no fechamento remove os listeners globais do CodeMirror.
 PUG.openConverter = function({ getPug, applyPug }) {
     const { $, toast } = PUG;
     const dialog = $('converter');
@@ -41,8 +41,8 @@ PUG.openConverter = function({ getPug, applyPug }) {
     function close() {
         if (dialog.hidden) return;
         document.removeEventListener('keydown', onKey);
-        pugCm.toTextArea();
-        htmlCm.toTextArea();
+        pugCm.destroy();
+        htmlCm.destroy();
         pugCm = htmlCm = null;
         pugHost.innerHTML = '';
         htmlHost.innerHTML = '';
@@ -53,16 +53,8 @@ PUG.openConverter = function({ getPug, applyPug }) {
         if (!dialog.hidden) return;
         // Mostra antes de criar os editores: o CodeMirror mede o tamanho ao ser criado
         dialog.hidden = false;
-        const makeEditor = (host, mode) => {
-            const textarea = document.createElement('textarea');
-            host.appendChild(textarea);
-            return CodeMirror.fromTextArea(textarea, {
-                mode, theme: 'pug', lineNumbers: true, lineWrapping: true,
-                indentUnit: 2, tabSize: 2,
-            });
-        };
-        pugCm = makeEditor(pugHost, 'pug');
-        htmlCm = makeEditor(htmlHost, 'text/html');
+        pugCm = PUG.createTextEditor(pugHost, 'pug');
+        htmlCm = PUG.createTextEditor(htmlHost, 'text/html');
         pugCm.setValue(getPug());
         if (pugCm.getValue().trim()) pugToHtml();
 

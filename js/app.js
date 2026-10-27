@@ -10,16 +10,14 @@ PUG.showCritical = function(errors) {
 };
 
 PUG.boot = async function() {
-    const { CONFIG, FILE_META, PUG_SVG, PUG_LOGO, CSS_SVG, JS_SVG, STARTER,
-            $, esc, storage, toast, compileAll } = PUG;
+    const { CONFIG, FILE_META, PUG_LOGO, STARTER,
+            $, esc, storage, sandbox, createEditor, toast, compileAll } = PUG;
 
     // Brand & File icons (antes do await: não dependem do Pug e não devem esperar o CDN)
     $('brand-logo').innerHTML = PUG_LOGO;
     document.querySelectorAll('[data-file-icon]').forEach(el => {
-        const file = el.parentElement.dataset.file;
-        if (file === 'pug') el.innerHTML = PUG_SVG;
-        else if (file === 'css') el.innerHTML = CSS_SVG;
-        else if (file === 'js') el.innerHTML = JS_SVG;
+        const { icon } = FILE_META[el.parentElement.dataset.file];
+        el.innerHTML = `<img src="${icon}" alt="" aria-hidden="true">`;
     });
 
     const pugResult = await (window.__pugReady || Promise.resolve({ ok: false, errors: [] }));
@@ -144,38 +142,21 @@ PUG.boot = async function() {
         applyEditorTheme(editorThemeSelect.value);
     });
 
-    const docs = {
-        pug: CodeMirror.Doc(state.pug, FILE_META.pug.mode),
-        css: CodeMirror.Doc(state.css, FILE_META.css.mode),
-        js:  CodeMirror.Doc(state.js,  FILE_META.js.mode),
-    };
-
-    const iframeToken = Math.random().toString(36).slice(2, 11);
-    iframe.addEventListener('load', () => {
-        iframe.contentWindow.postMessage({ __pgInit: true, token: iframeToken }, window.location.origin);
-    }, { once: true });
-
-    const editor = CodeMirror(editorHost, {
-        value: '',
-        mode: 'pug',
-        theme: 'pug',
-        lineNumbers: true,
-        indentUnit: 2,
-        tabSize: 2,
-        lineWrapping: true,
-        matchBrackets: true,
-        autoCloseBrackets: true,
-        extraKeys: {
-            'Ctrl-Enter': () => { renderAll(); return false; },
-            'Cmd-Enter':  () => { renderAll(); return false; },
-            'Ctrl-S':     () => { downloadHTML(); return false; },
-            'Cmd-S':      () => { downloadHTML(); return false; },
-            'Ctrl-Shift-V': () => { pasteAndRender(); return false; },
-            'Cmd-Shift-V':  () => { pasteAndRender(); return false; },
-            'Ctrl-Space': 'autocomplete',
-        },
+    const editor = createEditor(editorHost, {
+        'Ctrl-Enter': () => { renderAll(); return false; },
+        'Cmd-Enter':  () => { renderAll(); return false; },
+        'Ctrl-S':     () => { downloadHTML(); return false; },
+        'Cmd-S':      () => { downloadHTML(); return false; },
+        'Ctrl-Shift-V': () => { pasteAndRender(); return false; },
+        'Cmd-Shift-V':  () => { pasteAndRender(); return false; },
     });
-    editor.swapDoc(docs[activeFile]);
+
+    const docs = {
+        pug: editor.createDocument(state.pug, FILE_META.pug.mode),
+        css: editor.createDocument(state.css, FILE_META.css.mode),
+        js:  editor.createDocument(state.js,  FILE_META.js.mode),
+    };
+    editor.show(docs[activeFile]);
     lastSavedValue = serializeState();
 
     document.querySelectorAll('.file-tab').forEach(tab => {
@@ -184,7 +165,7 @@ PUG.boot = async function() {
     function switchTab(file) {
         if (file === activeFile) return;
         activeFile = file;
-        editor.swapDoc(docs[file]);
+        editor.show(docs[file]);
         document.querySelectorAll('.file-tab').forEach(t => t.classList.toggle('active', t.dataset.file === file));
         activeFileLabel.textContent = FILE_META[file].label;
         updateCursor();
@@ -194,11 +175,11 @@ PUG.boot = async function() {
         return { pug: docs.pug.getValue(), css: docs.css.getValue(), js: docs.js.getValue() };
     }
     function updateCursor() {
-        const p = editor.getCursor();
+        const p = editor.cursor();
         cursorLine.textContent = p.line + 1;
         cursorCol.textContent  = p.ch + 1;
     }
-    editor.on('cursorActivity', updateCursor);
+    editor.onCursorMove(updateCursor);
 
     const STATUS = {
         idle:    { color: 'var(--color-success)', text: 'Vazio' },
@@ -215,7 +196,7 @@ PUG.boot = async function() {
     }
     function clearErrorHighlight() {
         if (lastErrorLine !== null) {
-            editor.removeLineClass(lastErrorLine, 'background', 'cm-error-line');
+            editor.clearLine(lastErrorLine, 'cm-error-line');
             lastErrorLine = null;
         }
     }
@@ -226,8 +207,8 @@ PUG.boot = async function() {
         if (m) {
             const line = parseInt(m[1], 10) - 1;
             if (line >= 0 && line < editor.lineCount()) {
-                editor.addLineClass(line, 'background', 'cm-error-line');
-                editor.scrollIntoView({ line, ch: 0 }, 80);
+                editor.highlightLine(line, 'cm-error-line');
+                editor.scrollToLine(line);
                 lastErrorLine = line;
             }
         }
@@ -241,9 +222,8 @@ PUG.boot = async function() {
     const emptyStateDoc = () => `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{margin:0;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;background:#faf6ef;color:#998878}</style></head><body><div style="text-align:center"><div style="font-size:32px;margin-bottom:12px">✏️</div><p style="font-size:14px">Comece a digitar Pug para ver o resultado.</p></div></body></html>`;
     const errorStateDoc = () => `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{margin:0;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;background:#faf6ef;color:#998878}</style></head><body><div style="text-align:center"><div style="font-size:32px;margin-bottom:12px">⚠️</div><p style="font-size:14px">Corrija o erro acima para ver o resultado.</p></div></body></html>`;
 
-    // Único ponto que escreve no iframe. srcdoc evita src="index.html", que quebra em file://.
     function updatePreview(html) {
-        iframe.srcdoc = html;
+        sandbox.render(html);
     }
 
     function renderAll() {
@@ -288,7 +268,7 @@ PUG.boot = async function() {
             saveIndicator.style.opacity = '';
         }, CONFIG.SAVE_MS);
     }
-    editor.on('change', () => {
+    editor.onChange(() => {
         setStatus('pending');
         clearTimeout(debounce);
         debounce = setTimeout(() => renderAll(), CONFIG.DEBOUNCE_MS);
@@ -320,13 +300,7 @@ PUG.boot = async function() {
             }
         }
     }
-    // O iframe é sandbox sem allow-same-origin: a origem dele é "null", então a origem não serve
-    // de filtro. Identifica-se a mensagem pela janela de origem, que é o próprio iframe.
-    window.addEventListener('message', (e) => {
-        if (!e.data || e.data.__pg !== true) return;
-        if (e.source !== iframe.contentWindow) return;
-        appendConsole(e.data.type, e.data.args || []);
-    });
+    sandbox.onMessage(({ type, args }) => appendConsole(type, args));
     consoleHeader.addEventListener('click', (e) => {
         if (e.target.closest('#console-clear-btn')) return;
         consolePanel.classList.toggle('collapsed');
