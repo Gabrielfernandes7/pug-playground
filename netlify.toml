@@ -1,7 +1,7 @@
-# Site estático: sem build, publica a raiz do repositório.
+# Build com Vite: publica dist/ (gerado por `bun run build`).
 [build]
-  publish = "."
-  command = ""
+  publish = "dist"
+  command = "bun install --frozen-lockfile && bun run build"
 
 # HTML sempre revalidado: uma mudança de deploy aparece na hora.
 [[headers]]
